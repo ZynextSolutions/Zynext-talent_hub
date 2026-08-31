@@ -83,10 +83,10 @@ export default function AuditLogsPage() {
               )}
             </TableBody>
           </Table>
-          {(data?.pagination?.totalPages ?? 1) > 1 && (
+          {(data?.totalPages ?? 1) > 1 && (
             <div className="flex items-center justify-between gap-2 border-t border-border px-4 py-3">
               <p className="text-muted-foreground text-sm">
-                Page {data?.pagination?.page ?? 1} of {data?.pagination?.totalPages ?? 1}
+                Page {data?.page ?? 1} of {data?.totalPages ?? 1}
               </p>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
@@ -95,7 +95,7 @@ export default function AuditLogsPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={page >= (data?.pagination?.totalPages ?? 1)}
+                  disabled={page >= (data?.totalPages ?? 1)}
                   onClick={() => setPage((p) => p + 1)}
                 >
                   Next
