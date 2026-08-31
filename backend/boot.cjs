@@ -1,3 +1,5 @@
+const { spawnSync } = require('node:child_process');
+
 const keys = [
   'PORT',
   'NODE_ENV',
@@ -14,12 +16,16 @@ const keys = [
 
 console.log(
   '[boot]',
-  Object.fromEntries(
-    keys.map((key) => {
-      const value = process.env[key];
-      return [key, value ? `set(len=${value.length})` : 'MISSING'];
-    }),
-  ),
+  Object.fromEntries(keys.map((key) => [key, process.env[key] ? 'set' : 'MISSING'])),
 );
+
+const migrate = spawnSync('npx', ['prisma', 'migrate', 'deploy'], {
+  stdio: 'inherit',
+  env: process.env,
+});
+if (migrate.status !== 0) {
+  console.error('[boot] prisma migrate deploy failed', migrate.status);
+  process.exit(migrate.status || 1);
+}
 
 require('./dist/index.js');

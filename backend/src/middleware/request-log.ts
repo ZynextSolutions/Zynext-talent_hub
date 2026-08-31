@@ -1,5 +1,8 @@
 import type { NextFunction, Request, Response } from 'express';
 import { logger } from '../lib/logger';
+import { redactRequestPath } from '../lib/redact-request-path';
+
+export { redactRequestPath };
 
 export function requestLog(req: Request, res: Response, next: NextFunction): void {
   const start = Date.now();
@@ -10,7 +13,7 @@ export function requestLog(req: Request, res: Response, next: NextFunction): voi
         orgId: req.auth?.organizationId ?? undefined,
         actorId: req.auth?.sub,
         method: req.method,
-        path: req.originalUrl ?? req.path,
+        path: req.originalUrl ? redactRequestPath(req.originalUrl) : req.path,
         status: res.statusCode,
         duration_ms: Date.now() - start,
       },

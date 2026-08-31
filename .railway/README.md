@@ -36,7 +36,7 @@ Railway Config as Code (`railway.toml` / `railway.json`) is deprecated. This rep
    | api | `backend/Dockerfile` | repository root |
    | web | `frontend/Dockerfile` | repository root |
 
-   The API image runs `npx prisma migrate deploy` before `node backend/dist/index.js`. Healthcheck is `/ready` (not under `/api/v1`).
+   The API image runs `npx prisma migrate deploy` and only then starts listening. Healthcheck is `/ready` (not under `/api/v1`). Web healthcheck is `/health`.
 
 ## Production rules
 

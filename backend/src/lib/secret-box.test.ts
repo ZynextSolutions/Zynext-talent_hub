@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { decryptSecret, encryptSecret, isEncryptedSecret, promotePendingSecret } from './secret-box';
+import { decryptSecret, encryptSecret, encryptionKeyIsValid, isEncryptedSecret, promotePendingSecret } from './secret-box';
 
 describe('secret-box', () => {
   it('roundtrips plaintext when no encryption key is configured or dual-reads plaintext', () => {
@@ -13,6 +13,12 @@ describe('secret-box', () => {
   it('treats unprefixed values as plaintext (dual-read)', () => {
     assert.equal(decryptSecret('legacy-plain'), 'legacy-plain');
     assert.equal(isEncryptedSecret('legacy-plain'), false);
+  });
+
+  it('accepts only 32-byte base64 encryption keys', () => {
+    assert.equal(encryptionKeyIsValid(Buffer.alloc(32, 7).toString('base64')), true);
+    assert.equal(encryptionKeyIsValid('not-32-bytes'), false);
+    assert.equal(encryptionKeyIsValid(undefined), false);
   });
 
   it('promotes a pending secret without double-wrapping', () => {

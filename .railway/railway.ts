@@ -68,7 +68,7 @@ export default defineRailway(() => {
       dockerfilePath: "frontend/Dockerfile",
       watchPatterns: ["frontend/**", "frontend/Dockerfile"],
     },
-    healthcheck: "/",
+    healthcheck: "/health",
     healthcheckTimeout: 120,
     replicas: 1,
     deploy: {

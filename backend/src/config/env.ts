@@ -1,6 +1,7 @@
 import path from 'node:path';
 import dotenv from 'dotenv';
 import { z } from 'zod';
+import { encryptionKeyIsValid } from '../lib/secret-box';
 
 dotenv.config({ path: path.resolve(process.cwd(), '../.env') });
 
@@ -69,10 +70,10 @@ const envSchema = z
         path: ['REDIS_URL'],
       });
     }
-    if (val.NODE_ENV === 'production' && !val.ENCRYPTION_KEY) {
+    if (val.NODE_ENV === 'production' && !encryptionKeyIsValid(val.ENCRYPTION_KEY)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'ENCRYPTION_KEY is required in production',
+        message: 'ENCRYPTION_KEY must be 32-byte base64 (openssl rand -base64 32)',
         path: ['ENCRYPTION_KEY'],
       });
     }

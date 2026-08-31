@@ -10,9 +10,19 @@ function key(): Buffer | null {
   return buf;
 }
 
+export function encryptionKeyIsValid(raw: string | undefined): boolean {
+  if (!raw) return false;
+  return Buffer.from(raw, 'base64').length === 32;
+}
+
 export function encryptSecret(plaintext: string): string {
   const k = key();
-  if (!k) return plaintext;
+  if (!k) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('ENCRYPTION_KEY is missing or is not 32-byte base64');
+    }
+    return plaintext;
+  }
   const iv = randomBytes(12);
   const cipher = createCipheriv('aes-256-gcm', k, iv);
   const encrypted = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
