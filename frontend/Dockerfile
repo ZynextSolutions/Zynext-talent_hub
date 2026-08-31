@@ -5,6 +5,7 @@ COPY frontend/package.json frontend/package-lock.json* ./frontend/
 RUN npm ci --prefix frontend
 
 COPY frontend ./frontend/
+RUN mkdir -p frontend/public
 ARG NEXT_PUBLIC_API_URL=/api/v1
 ARG NEXT_PUBLIC_WEB_URL=http://localhost:3000
 ARG API_PROXY_TARGET=http://localhost:4000
