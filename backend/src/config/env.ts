@@ -81,7 +81,19 @@ const envSchema = z
 const parsed = envSchema.safeParse(process.env);
 
 if (!parsed.success) {
-  console.error('Invalid environment variables:', parsed.error.flatten().fieldErrors);
+  const present = {
+    PORT: Boolean(process.env.PORT),
+    DATABASE_URL: Boolean(process.env.DATABASE_URL),
+    JWT_ACCESS_SECRET: Boolean(process.env.JWT_ACCESS_SECRET),
+    JWT_REFRESH_SECRET: Boolean(process.env.JWT_REFRESH_SECRET),
+    JWT_ISS: Boolean(process.env.JWT_ISS),
+    JWT_AUD: Boolean(process.env.JWT_AUD),
+    CORS_ORIGINS: Boolean(process.env.CORS_ORIGINS),
+    REDIS_URL: Boolean(process.env.REDIS_URL),
+    JOB_SECRET: Boolean(process.env.JOB_SECRET),
+    ENCRYPTION_KEY: Boolean(process.env.ENCRYPTION_KEY),
+  };
+  console.error('Invalid environment variables:', parsed.error.flatten().fieldErrors, present);
   process.exit(1);
 }
 

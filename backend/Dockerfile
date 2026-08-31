@@ -29,6 +29,7 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/backend/package.json ./backend/
 COPY --from=builder /app/backend/node_modules ./backend/node_modules
 COPY --from=builder /app/backend/dist ./backend/dist
+COPY backend/boot.cjs ./backend/boot.cjs
 
 EXPOSE 4000
-CMD ["node", "backend/dist/index.js"]
+CMD ["node", "backend/boot.cjs"]

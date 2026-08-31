@@ -1,4 +1,4 @@
-import { execSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import app from './app';
 import { env } from './config/env';
 import { logger } from './lib/logger';
@@ -11,20 +11,33 @@ if (env.SENTRY_DSN) {
   });
 }
 
-function runProductionMigrations() {
-  if (!env.isProd) return;
-  try {
-    execSync('npx prisma migrate deploy', { stdio: 'inherit' });
-    logger.info('prisma_migrate_deploy_ok');
-  } catch (err) {
-    logger.error({ err }, 'prisma_migrate_deploy_failed');
-    process.exit(1);
-  }
+function runPrisma(args: string[]): Promise<number> {
+  return new Promise((resolve) => {
+    const child = spawn('npx', ['prisma', ...args], { stdio: 'inherit', env: process.env });
+    child.on('exit', (code) => resolve(code ?? 1));
+  });
 }
 
-const server = app.listen(env.PORT, '0.0.0.0', () => {
-  logger.info({ port: env.PORT, host: '0.0.0.0' }, 'api_listening');
-  runProductionMigrations();
+async function runProductionMigrations() {
+  if (!env.isProd) return;
+  let code = await runPrisma(['migrate', 'deploy']);
+  if (code !== 0) {
+    logger.warn('prisma_p3009_resolving_scorm_mvp');
+    await runPrisma(['migrate', 'resolve', '--rolled-back', '20250831220000_scorm_mvp']);
+    code = await runPrisma(['migrate', 'deploy']);
+  }
+  if (code === 0) {
+    logger.info('prisma_migrate_deploy_ok');
+    return;
+  }
+  logger.error({ code }, 'prisma_migrate_deploy_failed');
+  process.exit(1);
+}
+
+const port = env.PORT;
+const server = app.listen(port, '0.0.0.0', () => {
+  logger.info({ port, host: '0.0.0.0' }, 'api_listening');
+  void runProductionMigrations();
 });
 
 function shutdown(signal: string) {
