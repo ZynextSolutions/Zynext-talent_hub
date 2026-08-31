@@ -21,7 +21,7 @@ RUN npx prisma generate \
 FROM node:22-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-RUN apk add --no-cache wget
+RUN apk add --no-cache openssl libc6-compat wget
 
 COPY package.json ./
 COPY prisma ./prisma/

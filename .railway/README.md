@@ -36,7 +36,9 @@ Railway Config as Code (`railway.toml` / `railway.json`) is deprecated. This rep
    | api | `backend/Dockerfile` | repository root |
    | web | `frontend/Dockerfile` | repository root |
 
-   The API image runs `npx prisma migrate deploy` and only then starts listening. Healthcheck is `/ready` (not under `/api/v1`). Web healthcheck is `/health`.
+   Do **not** set `PORT` on api or web. Railway injects it; the API listens on that value. Web proxy target is `http://${{api.RAILWAY_PRIVATE_DOMAIN}}:${{api.PORT}}`.
+
+   The API image runs `prisma migrate deploy` and only then starts listening. Healthcheck is `/ready` (not under `/api/v1`). Web healthcheck is `/health`. If `/ready` keeps failing, the process is not listening — read **Deploy logs**, not only the healthcheck panel.
 
 ## Production rules
 
@@ -51,7 +53,7 @@ Hit the **private** API (not the public web host) so `JOB_SECRET` is not sent ac
 
 ```bash
 curl -fsS -X POST \
-  "http://api.railway.internal:4000/api/v1/jobs/reminders?organizationId=<ORG_UUID>" \
+  "http://api.railway.internal:$PORT/api/v1/jobs/reminders?organizationId=<ORG_UUID>" \
   -H "X-Job-Secret: $JOB_SECRET"
 ```
 

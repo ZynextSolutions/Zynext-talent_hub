@@ -42,7 +42,6 @@ export default defineRailway(() => {
     },
     env: {
       NODE_ENV: "production",
-      PORT: "4000",
       RAILWAY_DOCKERFILE_PATH: "backend/Dockerfile",
       DATABASE_URL: db.env.DATABASE_URL,
       REDIS_URL: cache.env.REDIS_URL,
@@ -79,7 +78,7 @@ export default defineRailway(() => {
       NODE_ENV: "production",
       RAILWAY_DOCKERFILE_PATH: "frontend/Dockerfile",
       NEXT_PUBLIC_API_URL: "/api/v1",
-      API_PROXY_TARGET: "http://${{api.RAILWAY_PRIVATE_DOMAIN}}:4000",
+      API_PROXY_TARGET: "http://${{api.RAILWAY_PRIVATE_DOMAIN}}:${{api.PORT}}",
     },
   });
 

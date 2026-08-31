@@ -11,8 +11,8 @@ if (env.SENTRY_DSN) {
 }
 
 const port = env.PORT;
-const server = app.listen(port, '0.0.0.0', () => {
-  logger.info({ port, host: '0.0.0.0' }, 'api_listening');
+const server = app.listen(port, () => {
+  logger.info({ port }, 'api_listening');
 });
 
 function shutdown(signal: string) {
