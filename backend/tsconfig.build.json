@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false
+  },
+  "exclude": [
+    "node_modules",
+    "dist",
+    "src/middleware/index.ts",
+    "src/middleware/errorHandler.ts",
+    "src/middleware/requirePermission.ts",
+    "src/middleware/requirePlatform.ts",
+    "src/middleware/resolveTenant.ts",
+    "src/middleware/requestId.ts",
+    "src/lib/async-handler.ts",
+    "src/services/org.service.ts",
+    "src/routes/api.ts"
+  ]
+}

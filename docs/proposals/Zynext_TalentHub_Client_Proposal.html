@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Zynext TalentHub — Client Proposal | Corporate Learning that Follows Your Org Chart</title>
+  <meta name="description" content="Zynext TalentHub is a multi-tenant corporate learning platform: assign by org chart, author in Course Studio, gate with assessments, certify with public verification, and report for executives." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --indigo: #6366F1;
+      --indigo-2: #818CF8;
+      --indigo-deep: #4338CA;
+      --ink: #0B1220;
+      --ink-2: #1A2332;
+      --muted: #5B6478;
+      --paper: #F4F6FB;
+      --white: #FFFFFF;
+      --line: #E4E7F0;
+      --line-2: #D5DAE6;
+      --emerald: #059669;
+      --amber: #D97706;
+      --rose: #E11D48;
+      --shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
+      --radius: 18px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+      line-height: 1.55;
+      font-size: 15.5px;
+    }
+    a { color: var(--indigo-deep); }
+    img, svg { max-width: 100%; display: block; }
+    .skip { position: absolute; left: -999px; }
+    .topbar {
+      position: sticky; top: 0; z-index: 40;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      padding: 12px 28px;
+      background: rgba(255,255,255,0.86);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--line);
+    }
+    .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); }
+    .mark {
+      width: 32px; height: 32px; border-radius: 9px;
+      background: linear-gradient(135deg, var(--indigo), var(--indigo-2));
+      color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 13px;
+    }
+    .brand strong { font-size: 14px; letter-spacing: -0.02em; }
+    .brand span { display: block; font-size: 11px; color: var(--muted); font-weight: 500; }
+    .topnav { display: flex; flex-wrap: wrap; gap: 6px 14px; justify-content: flex-end; }
+    .topnav a { font-size: 12.5px; font-weight: 600; color: var(--muted); text-decoration: none; }
+    .topnav a:hover { color: var(--ink); }
+    .actions { display: flex; gap: 8px; }
+    .btn {
+      appearance: none; border: 0; cursor: pointer;
+      background: var(--indigo); color: #fff;
+      font: 650 13px/1 "Plus Jakarta Sans", sans-serif;
+      padding: 9px 14px; border-radius: 999px; text-decoration: none;
+    }
+    .btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line-2); }
+    .wrap { max-width: 1120px; margin: 0 auto; padding: 0 28px; }
+    .cover {
+      position: relative; overflow: hidden;
+      background: radial-gradient(1200px 500px at 10% -10%, rgba(99,102,241,0.35), transparent 55%),
+                  radial-gradient(900px 400px at 100% 0%, rgba(129,140,248,0.28), transparent 50%),
+                  linear-gradient(180deg, #070B16 0%, #12182A 70%, #0B1220 100%);
+      color: #fff; min-height: 92vh; display: flex; align-items: center;
+      padding: 72px 0 64px;
+    }
+    .cover::after {
+      content: ""; position: absolute; inset: auto 0 0; height: 80px;
+      background: linear-gradient(to bottom, transparent, var(--paper));
+    }
+    .kicker {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+      color: #C7CBFF; margin-bottom: 18px;
+    }
+    .kicker i { width: 28px; height: 1px; background: #C7CBFF; display: inline-block; }
+    h1 {
+      font-family: "Instrument Serif", Georgia, serif;
+      font-weight: 400; font-size: clamp(42px, 6.4vw, 76px);
+      line-height: 1.04; letter-spacing: -0.03em; max-width: 16ch;
+    }
+    .lede { margin-top: 22px; max-width: 58ch; font-size: 18px; color: #C9D0E3; }
+    .cover-meta { display: flex; flex-wrap: wrap; gap: 22px; margin-top: 36px; color: #A9B2C9; font-size: 13px; }
+    .cover-meta b { display: block; color: #fff; font-size: 14px; margin-bottom: 2px; }
+    .stats {
+      display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px;
+      margin-top: -42px; position: relative; z-index: 2;
+    }
+    .stat {
+      background: #fff; border: 1px solid var(--line); border-radius: 16px;
+      padding: 16px 14px; box-shadow: var(--shadow);
+    }
+    .stat b { display: block; font-size: 26px; letter-spacing: -0.04em; color: var(--indigo-deep); }
+    .stat span { font-size: 11.5px; color: var(--muted); font-weight: 600; }
+    section.block { padding: 72px 0 8px; }
+    .eyebrow { font-size: 12px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: var(--indigo); margin-bottom: 10px; }
+    h2 {
+      font-family: "Instrument Serif", Georgia, serif;
+      font-size: clamp(30px, 3.6vw, 44px); font-weight: 400; letter-spacing: -0.03em; line-height: 1.12;
+      margin-bottom: 14px;
+    }
+    h3 { font-size: 18px; letter-spacing: -0.02em; margin: 0 0 8px; }
+    .sub { color: var(--muted); max-width: 70ch; margin-bottom: 28px; }
+    .grid-2 { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 22px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+    .card {
+      background: #fff; border: 1px solid var(--line); border-radius: var(--radius);
+      padding: 22px; box-shadow: 0 1px 0 rgba(15,23,42,0.03);
+    }
+    .card.accent { background: linear-gradient(180deg, #fff, #F5F6FF); border-color: #D7DBFF; }
+    .pain { display: grid; gap: 10px; }
+    .pain-row {
+      display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;
+      background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px;
+    }
+    .pain-row strong { font-size: 13.5px; }
+    .pain-row span { font-size: 13px; color: var(--muted); }
+    .persona {
+      min-height: 240px; display: flex; flex-direction: column; gap: 8px;
+    }
+    .badge {
+      display: inline-flex; align-self: flex-start;
+      font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
+      padding: 4px 8px; border-radius: 999px; background: #EEF0FF; color: var(--indigo-deep);
+    }
+    .persona ul { margin: 8px 0 0 16px; color: var(--muted); font-size: 13px; }
+    .pic {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+    }
+    .pic .card { min-height: 180px; }
+    .pic h3 { font-size: 16px; }
+    .flow {
+      display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch;
+    }
+    .step {
+      flex: 1 1 140px; background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; position: relative;
+    }
+    .step n {
+      display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%;
+      background: var(--indigo); color: #fff; font-size: 11px; font-weight: 800; margin-bottom: 8px;
+    }
+    .step b { display: block; font-size: 13px; }
+    .step span { display: block; font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .wf { margin: 0 0 28px; page-break-inside: avoid; }
+    .wf header { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; margin-bottom: 10px; }
+    .wf h3 { margin: 0; }
+    .meta { font-size: 12.5px; color: var(--muted); }
+    table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 14px; overflow: hidden; }
+    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); font-size: 13px; vertical-align: top; }
+    th { background: #F7F8FD; font-size: 11.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip { background: #fff; border: 1px solid var(--line); border-radius: 999px; padding: 7px 12px; font-size: 12.5px; font-weight: 600; }
+    .phases { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .phase .n { font-family: "Instrument Serif", serif; font-size: 28px; color: var(--indigo); }
+    .callout {
+      background: var(--ink); color: #fff; border-radius: 24px; padding: 36px;
+      display: grid; grid-template-columns: 1.4fr 0.8fr; gap: 24px; align-items: center;
+    }
+    .callout h2 { color: #fff; }
+    .callout p { color: #C9D0E3; }
+    .callout .btn { background: #fff; color: var(--ink); }
+    .note { font-size: 13px; color: var(--muted); background: #EEF2FF; border: 1px solid #D7DBFF; border-radius: 12px; padding: 12px 14px; }
+    .warn { background: #FFF7ED; border-color: #FED7AA; }
+    footer.doc {
+      padding: 40px 0 60px; color: var(--muted); font-size: 12.5px;
+    }
+    .toc a { text-decoration: none; color: var(--ink); font-weight: 650; }
+    .toc li { margin: 8px 0; list-style: none; }
+    .er { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; line-height: 1.7; background: #0B1220; color: #E5E7EB; padding: 18px; border-radius: 16px; overflow: auto; }
+    .icon-row { display: flex; gap: 10px; align-items: flex-start; }
+    .dot { width: 36px; height: 36px; border-radius: 10px; background: #EEF0FF; color: var(--indigo-deep); display: grid; place-items: center; flex: none; font-weight: 800; }
+    @media (max-width: 980px) {
+      .stats, .grid-2, .grid-3, .grid-4, .grid-5, .pain-row, .pic, .phases, .callout { grid-template-columns: 1fr; }
+      .topnav { display: none; }
+      .cover { min-height: auto; }
+    }
+    @media print {
+      .topbar, .actions, .skip { display: none !important; }
+      * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      body { background: #fff; font-size: 11.5px; }
+      .cover { min-height: 100vh; break-after: page; padding: 48px 0; }
+      .cover::after { display: none; }
+      .wrap { max-width: none; padding: 0 12mm; }
+      section.block { padding: 18px 0; break-inside: avoid; }
+      .stats { margin-top: 18px; box-shadow: none; }
+      .card, .pain-row, .stat { box-shadow: none; }
+      h1 { font-size: 48px; }
+      h2 { font-size: 26px; }
+      a { text-decoration: none; color: inherit; }
+      .callout { break-inside: avoid; }
+      @page { size: A4; margin: 12mm 10mm 14mm; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#content">Skip to content</a>
+  <header class="topbar">
+    <a class="brand" href="#top">
+      <div class="mark">Z</div>
+      <div><strong>Zynext TalentHub</strong><span>Client proposal · September 2026</span></div>
+    </a>
+    <nav class="topnav" aria-label="Document">
+      <a href="#summary">Summary</a>
+      <a href="#problem">Problem</a>
+      <a href="#personas">Roles</a>
+      <a href="#features">Product</a>
+      <a href="#workflows">Workflows</a>
+      <a href="#security">Trust</a>
+      <a href="#rollout">Rollout</a>
+      <a href="#next">Next step</a>
+    </nav>
+    <div class="actions">
+      <button class="btn ghost" type="button" onclick="window.print()">Print / PDF</button>
+      <a class="btn" href="#next">Request workshop</a>
+    </div>
+  </header>
+
+  <section class="cover" id="top">
+    <div class="wrap">
+      <p class="kicker"><i></i> Confidential client proposal</p>
+      <h1>Corporate learning that follows your org chart.</h1>
+      <p class="lede">Zynext TalentHub is a multi-tenant learning platform for organizations that must assign training, prove competence, issue verifiable certificates, and report to executives — across a real company structure, not a flat class list.</p>
+      <div class="cover-meta">
+        <div><b>Prepared for</b> Prospective client leadership, L&amp;D, HR, and IT</div>
+        <div><b>Product</b> Zynext TalentHub</div>
+        <div><b>Date</b> 1 September 2026</div>
+        <div><b>Status</b> Capabilities grounded in the running product</div>
+      </div>
+    </div>
+  </section>
+
+  <main id="content">
+    <div class="wrap">
+      <div class="stats">
+        <div class="stat"><b>5</b><span>Roles (4 org + Super Admin)</span></div>
+        <div class="stat"><b>43</b><span>Named permissions</span></div>
+        <div class="stat"><b>8</b><span>Lesson types in Studio</span></div>
+        <div class="stat"><b>7</b><span>Question types</span></div>
+        <div class="stat"><b>11</b><span>Analytics views</span></div>
+        <div class="stat"><b>1</b><span>Public certificate verify URL</span></div>
+      </div>
+    </div>
+
+    <section class="block" id="summary">
+      <div class="wrap">
+        <p class="eyebrow">01 · Executive summary</p>
+        <h2>An operating system for corporate learning — assign, examine, certify, prove.</h2>
+        <p class="sub">Built for enterprises, academies, and regulated teams. The client receives a complete web application: a Next.js learner and admin experience, an Express API, and PostgreSQL with tenant isolation on every organization-owned record.</p>
+        <div class="grid-2">
+          <div class="card accent">
+            <h3>What you get on day one</h3>
+            <ul style="margin:10px 0 0 18px;color:var(--muted)">
+              <li>Learner home, catalog, and a full learn player</li>
+              <li>Course Studio with modules, live sessions, SCORM 1.2, and assessments</li>
+              <li>Org-tree assignment to organization, division, department, team, or person</li>
+              <li>Question banks, grading queue, and certificate designer</li>
+              <li>Analytics hub, seven operational reports, compliance ZIP</li>
+              <li>Platform console for Super Admins operating many tenants</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Five reasons this is not a classroom LMS</h3>
+            <ol style="margin:10px 0 0 18px;color:var(--muted)">
+              <li><strong style="color:var(--ink)">Org-aware.</strong> Assign once to a department; enrollments follow the tree. Managers see only their subtree.</li>
+              <li><strong style="color:var(--ink)">Studio, not a file dump.</strong> Eight lesson types, completion rules, skills, publish history.</li>
+              <li><strong style="color:var(--ink)">Assessments that gate proof.</strong> Pre, final, survey, module quiz — finals can block the certificate.</li>
+              <li><strong style="color:var(--ink)">Certificates you can show an auditor.</strong> Unique numbers, branded templates, public verify.</li>
+              <li><strong style="color:var(--ink)">Reporting in-product.</strong> Eleven analytics tabs, CSV / PDF / XLSX, scheduled reports, BI API keys.</li>
+            </ol>
+          </div>
+        </div>
+        <p class="note" style="margin-top:16px">Presented throughout as <strong>Zynext TalentHub</strong> — one commercial name on login, admin, learner, and platform surfaces.</p>
+      </div>
+    </section>
+
+    <section class="block" id="problem">
+      <div class="wrap">
+        <p class="eyebrow">02 · The cost of informal training</p>
+        <h2>Spreadsheets assign. Word files “certify.” Nobody can prove it.</h2>
+        <p class="sub">Zynext TalentHub is designed to remove the failure modes we see when L&amp;D is assembled from email, Drive, Forms, and a calendar.</p>
+        <div class="pain">
+          <div class="pain-row"><strong>Pain today</strong><strong>What happens</strong><strong>How Zynext TalentHub answers</strong></div>
+          <div class="pain-row"><span>Assignment by spreadsheet</span><span>HR emails a list; nobody knows who finished</span><span>Assign to org / division / department / team / user with live enrollment status</span></div>
+          <div class="pain-row"><span>Managers see everyone</span><span>Org-wide dashboards leak other departments</span><span>Manager scope is the department subtree</span></div>
+          <div class="pain-row"><span>Completion is a checkbox</span><span>Learners skip content; “done” is honor system</span><span>All lessons, required lessons, or percentage — plus lesson prerequisites and a final exam lock</span></div>
+          <div class="pain-row"><span>Certificates are templates</span><span>Easy to forge; no lookup</span><span>Globally unique number, branded design, public /verify page, revoke</span></div>
+          <div class="pain-row"><span>Compliance expires quietly</span><span>People stay “certified” forever</span><span>Recertify-every-N-days; expiry notices; job re-opens the enrollment</span></div>
+          <div class="pain-row"><span>Content in five tools</span><span>Video, quiz, SCORM, and classroom live apart</span><span>Course Studio + SCORM 1.2 + ILT/VILT + assessments + community</span></div>
+          <div class="pain-row"><span>Auditors want a pack</span><span>Weeks of export wrangling</span><span>Compliance ZIP + audit logs + scheduled reports</span></div>
+          <div class="pain-row"><span>Multi-company operations</span><span>One install per company, or data bleed</span><span>Shared-database multi-tenancy and a platform console</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="picture">
+      <div class="wrap">
+        <p class="eyebrow">03 · Product in one picture</p>
+        <h2>Four planes. One platform.</h2>
+        <p class="sub">Closer to TalentLMS / Docebo-shaped problems than Moodle or Canvas classrooms — with a modern admin shell.</p>
+        <div class="pic">
+          <article class="card"><div class="dot">01</div><h3 style="margin-top:12px">Learn</h3><p class="meta">Dashboard, catalog, learn player, community, own certificates and reports. Self-enroll only if the organization allows it.</p></article>
+          <article class="card"><div class="dot">02</div><h3 style="margin-top:12px">Studio</h3><p class="meta">Author modules and eight lesson types. Assessments, sessions, skills, SCORM, assignments, publish history.</p></article>
+          <article class="card"><div class="dot">03</div><h3 style="margin-top:12px">Proof</h3><p class="meta">Certificates with unique numbers, public verification, recertification, path certificates, compliance ZIP.</p></article>
+          <article class="card"><div class="dot">04</div><h3 style="margin-top:12px">Platform</h3><p class="meta">Super Admin console: tenant CRUD, health KPIs, platform audit. Isolated from org users.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="personas">
+      <div class="wrap">
+        <p class="eyebrow">04 · Who it is for</p>
+        <h2>Five personas. No custom role builder — on purpose.</h2>
+        <p class="sub">The complete role set is four organization roles plus a platform Super Admin. Navigation is permission-filtered so employees never see admin surfaces.</p>
+        <div class="grid-5">
+          <article class="card persona"><span class="badge">Platform</span><h3>Super Admin</h3><p class="meta">Signs in at /platform/login. Creates, inspects, suspends, and deletes tenants. Cannot exist as an org user.</p><ul><li>Tenant lifecycle</li><li>Platform audit</li><li>Audited org-scoped support</li></ul></article>
+          <article class="card persona"><span class="badge">Buyer</span><h3>Org Admin</h3><p class="meta">Owns the tenant: tree, people, SSO, certificates, integrations, reports.</p><ul><li>Full studio &amp; banks</li><li>Revoke certificates</li><li>API keys &amp; webhooks</li></ul></article>
+          <article class="card persona"><span class="badge">Operator</span><h3>Manager</h3><p class="meta">Accountable for a department. Invites employees only. Needs a department on the profile.</p><ul><li>Subtree analytics</li><li>Assign in department</li><li>Cannot publish or grade</li></ul></article>
+          <article class="card persona"><span class="badge">Author</span><h3>Instructor</h3><p class="meta">Builds and runs courses they created. Org admins can edit any course.</p><ul><li>Publish &amp; media</li><li>Banks &amp; grading</li><li>No org tree edits</li></ul></article>
+          <article class="card persona"><span class="badge">Learner</span><h3>Employee</h3><p class="meta">Clear path: assigned, due, next lesson, certificates. MFA and profile in settings.</p><ul><li>Catalog &amp; player</li><li>Own reports only</li><li>No other people’s PII</li></ul></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="features">
+      <div class="wrap">
+        <p class="eyebrow">05 · Feature catalog</p>
+        <h2>Shipped in the running product — not a wishlist.</h2>
+        <div class="grid-3" style="margin-bottom:16px">
+          <article class="card"><h3>Authentication &amp; security</h3><p class="meta">Slug + email login so the same person can exist in two tenants. 15-minute access tokens, 7-day rotating refresh, MFA (TOTP), OIDC SSO, lockout after 10 failures, password 12–128 with a blocklist. Helmet, CORS allow-list, HSTS in production.</p></article>
+          <article class="card"><h3>Multi-tenant org model</h3><p class="meta">Shared PostgreSQL with organization_id isolation. Drag-and-drop tree: Division → Department → Team. Move-reconcile when people change seats. Settings: timezone, self-enroll, answer reveal, certificate prefix (default COR), USD or MMK.</p></article>
+          <article class="card"><h3>Course Studio</h3><p class="meta">Tabs: Outline, About, History, SCORM, Assessments, Sessions, Assignments, Skills. Status DRAFT → PUBLISHED → ARCHIVED. Completion: all lessons, required, or percentage. Prerequisites, availability windows, duplicate, revision snapshots.</p></article>
+          <article class="card"><h3>Eight lesson types</h3><p class="meta">Video, reading, document, knowledge check, discussion, instructor-led, virtual ILT, SCORM 1.2. Caps: thumbnail 1 MB, documents 25 MB, video 80 MB, SCORM 100 MB. Media only via authenticated API — raw /uploads is forbidden.</p></article>
+          <article class="card"><h3>Enrollments &amp; progress</h3><p class="meta">Five assignment targets. Due dates, recertify-every-N-days, reminders. Statuses: enrolled, in progress, completed, revoked. Sources include path and recertify. Lesson watch position and completion.</p></article>
+          <article class="card"><h3>Assessments &amp; banks</h3><p class="meta">PRE, FINAL, SURVEY, MODULE_QUIZ. Seven types: MCQ, true/false, multi-select, short answer, fill-blank, matching, essay. Bank draw by count and tags. Timed attempts. Default pass 70%, max 3 attempts (surveys unlimited).</p></article>
+          <article class="card"><h3>Grading queue</h3><p class="meta">Objective items auto-score. Short answer and essay go to /grading. Score plus feedback. Statuses: auto-graded, pending review, graded, expired.</p></article>
+          <article class="card"><h3>Certificates</h3><p class="meta">Auto-issue at 100% progress and a passing final if one exists. Themes midnight, ivory, slate. Logo, signature, background. Public verify and PNG download. Path certificates use PREFIX-PATH.</p></article>
+          <article class="card"><h3>Analytics &amp; reports</h3><p class="meta">Eleven tabs including compliance, ROI, skills, and xAPI. Seven reports with CSV, PDF, XLSX. Schedules daily / weekly / monthly. API keys scoped to reports:read for BI pull.</p></article>
+          <article class="card"><h3>Learning paths &amp; skills</h3><p class="meta">Ordered courses with unlock notifications and a path certificate. Skill catalog mapped to courses and system roles, levels 1–5. This is a light competency graph, not a full talent suite.</p></article>
+          <article class="card"><h3>Community &amp; notify</h3><p class="meta">Eight notification kinds, org/course announcements, org and course forums. Webhooks today: enrollment.completed and report.delivered.</p></article>
+          <article class="card"><h3>Platform jobs</h3><p class="meta">Five HTTP jobs behind a job secret: reminders, recertify, scheduled reports, cert-expiry, analytics snapshots. Production must schedule them (cron or Kubernetes). There is no in-app worker.</p></article>
+        </div>
+        <p class="note warn"><strong>Do not claim AI.</strong> There is no generative authoring, auto-question generation, chatbot tutor, or LLM grading. Course Studio is human-authored. SCORM is 1.2 only — not 2004.</p>
+      </div>
+    </section>
+
+    <section class="block" id="studio">
+      <div class="wrap">
+        <p class="eyebrow">06 · Course Studio &amp; learn player</p>
+        <h2>From outline to published program in one place.</h2>
+        <div class="grid-2">
+          <div>
+            <h3>Authoring path</h3>
+            <div class="flow" style="margin-top:12px">
+              <div class="step"><n>1</n><b>Draft</b><span>Create course, stay unpublished</span></div>
+              <div class="step"><n>2</n><b>About</b><span>Availability, cost, completion rule</span></div>
+              <div class="step"><n>3</n><b>Outline</b><span>Modules + 8 lesson types</span></div>
+              <div class="step"><n>4</n><b>Media</b><span>Thumbnail, intro, assets, SCORM</span></div>
+              <div class="step"><n>5</n><b>Examine</b><span>Pre, quizzes, final, survey</span></div>
+              <div class="step"><n>6</n><b>Publish</b><span>Revision snapshot, then assign</span></div>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Learner path</h3>
+            <p class="meta" style="margin:8px 0 12px">Catalog or dashboard assignment → enrollment → optional pre-assessment gate → learn player → lessons unlock by prerequisite → completion rule → final exam at 100% progress → certificate → webhook.</p>
+            <div class="chips">
+              <span class="chip">Continue learning</span>
+              <span class="chip">Assigned not started</span>
+              <span class="chip">Due soon</span>
+              <span class="chip">My paths</span>
+              <span class="chip">Recent certificates</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="workflows">
+      <div class="wrap">
+        <p class="eyebrow">07 · System workflows</p>
+        <h2>Fifteen journeys, from invite to verified certificate.</h2>
+        <p class="sub">Each workflow is how the running system actually behaves — including the exception paths a buyer’s IT team will ask about.</p>
+
+        <article class="wf card">
+          <header><h3>1. Register a new organization</h3><span class="meta">Actor: prospective Org Admin · Trigger: /register</span></header>
+          <div class="flow">
+            <div class="step"><n>1</n><b>Open register</b><span>Org name, slug, admin identity, password</span></div>
+            <div class="step"><n>2</n><b>Validate</b><span>Unique slug, password policy</span></div>
+            <div class="step"><n>3</n><b>Provision tenant</b><span>Seed four roles + Headquarters tree</span></div>
+            <div class="step"><n>4</n><b>Session</b><span>ORG_ADMIN tokens → /dashboard</span></div>
+          </div>
+          <p class="meta" style="margin-top:10px">Exceptions: slug taken, weak password, rate limit 5 / 15 min. Enterprise clients typically disable public registration and let Super Admin create the tenant instead.</p>
+        </article>
+
+        <article class="wf card">
+          <header><h3>2. Login and session</h3><span class="meta">Actor: org user · Trigger: /login with slug + email + password</span></header>
+          <div class="flow">
+            <div class="step"><n>1</n><b>Org check</b><span>Must exist and be ACTIVE</span></div>
+            <div class="step"><n>2</n><b>Lockout</b><span>10 failures block the account</span></div>
+            <div class="step"><n>3</n><b>MFA fork</b><span>If enabled, 5-minute mfaToken + TOTP</span></div>
+            <div class="step"><n>4</n><b>Route</b><span>analytics:read → Admin dashboard, else Learner home</span></div>
+          </div>
+          <p class="meta" style="margin-top:10px">Refresh rotates the token family; reuse of an old refresh revokes the family. INVITED users cannot sign in until they accept. Suspended org or user is rejected.</p>
+        </article>
+
+        <article class="wf card">
+          <header><h3>3. Password reset</h3><span class="meta">Actor: org user · Trigger: /forgot-password</span></header>
+          <div class="flow">
+            <div class="step"><n>1</n><b>Request</b><span>Email + organization slug</span></div>
+            <div class="step"><n>2</n><b>Token</b><span>One hour, single use</span></div>
+            <div class="step"><n>3</n><b>Reset</b><span>Policy-enforced new password</span></div>
+          </div>
+          <p class="meta" style="margin-top:10px">Copy should stay enumeration-safe. Production mail must actually send — see honest limitations.</p>
+        </article>
+
+        <article class="wf card">
+          <header><h3>4. Invitation and RBAC</h3><span class="meta">Actors: Org Admin or Manager (employees only)</span></header>
+          <div class="flow">
+            <div class="step"><n>1</n><b>Assign role</b><span>Admin: four roles. Manager: EMPLOYEE only</span></div>
+            <div class="step"><n>2</n><b>INVITED</b><span>7-day token, CSV import supported</span></div>
+            <div class="step"><n>3</n><b>Accept</b><span>/accept-invite → ACTIVE + session</span></div>
+            <div class="step"><n>4</n><b>Lifecycle</b><span>Resend, unlock, suspend, bulk status</span></div>
+          </div>
+        </article>
+
+        <article class="wf card">
+          <header><h3>5. Platform tenant onboarding</h3><span class="meta">Actor: Super Admin · /platform/organizations</span></header>
+          <div class="flow">
+            <div class="step"><n>1</n><b>Platform login</b><span>Separate identity table</span></div>
+            <div class="step"><n>2</n><b>Create org</b><span>Name, slug, settings</span></div>
+            <div class="step"><n>3</n><b>Invite first admin</b><span>Inside the tenant</span></div>
+            <div class="step"><n>4</n><b>Optional suspend</b><span>All org logins fail</span></div>
+          </div>
+        </article>
+
+        <article class="wf card">
+          <header><h3>6. OIDC single sign-on</h3><span class="meta">Configure in org settings · Learner uses SSO on login</span></header>
+          <div class="flow">
+            <div class="step"><n>1</n><b>Admin sets IdP</b><span>Issuer, client, email domain allow-list</span></div>
+            <div class="step"><n>2</n><b>Discovery</b><span>/.well-known/openid-configuration</span></div>
+            <div class="step"><n>3</n><b>Redirect</b><span>openid email profile</span></div>
+            <div class="step"><n>4</n><b>Exchange</b><span>Short-lived token → session</span></div>
+          </div>
+        </article>
+
+        <article class="wf card">
+          <header><h3>7. Course creation to publish</h3><span class="meta">Instructor (own courses) or Org Admin</span></header>
+          <div class="flow">
+            <div class="step"><n>1</n><b>DRAFT</b><span>POST /courses</span></div>
+            <div class="step"><n>2</n><b>Studio</b><span>About, outline, media, SCORM</span></div>
+            <div class="step"><n>3</n><b>Assess &amp; sessions</b><span>Live ILT/VILT + skills</span></div>
+            <div class="step"><n>4</n><b>Publish</b><span>CourseRevision snapshot</span></div>
+            <div class="step"><n>5</n><b>Assign</b><span>Target + due + recertify</span></div>
+          </div>
+          <p class="meta" style="margin-top:10px">Cannot assign until PUBLISHED. Instructors cannot mutate someone else’s course. Availability windows return not-yet / no-longer-available.</p>
+        </article>
+
+        <article class="wf card">
+          <header><h3>8. Discover → enroll → learn → complete</h3><span class="meta">Employee or Manager as learner</span></header>
+          <div class="flow">
+            <div class="step"><n>1</n><b>Enter</b><span>Assignment, path, catalog, or manual enroll</span></div>
+            <div class="step"><n>2</n><b>Pre-gate</b><span>Pass PRE if required</span></div>
+            <div class="step"><n>3</n><b>Learn</b><span>/learn/[courseId], lesson prerequisites</span></div>
+            <div class="step"><n>4</n><b>Complete rule</b><span>All / required / percentage</span></div>
+            <div class="step"><n>5</n><b>Final</b><span>Only at 100% progress</span></div>
+            <div class="step"><n>6</n><b>Proof</b><span>Certificate + enrollment.completed</span></div>
+          </div>
+          <p class="meta" style="margin-top:10px">Overdue is reporting and reminder — not a hard lock. Revoked enrollments and full ILT sessions are rejected.</p>
+        </article>
+
+        <article class="wf card">
+          <header><h3>9. Assessment lifecycle</h3><span class="meta">Author → learner → grader</span></header>
+          <div class="flow">
+            <div class="step"><n>1</n><b>Author</b><span>Items or bank draw</span></div>
+            <div class="step"><n>2</n><b>Start</b><span>Shuffled snapshot + optional timer</span></div>
+            <div class="step"><n>3</n><b>Submit</b><span>Auto-score objective items</span></div>
+            <div class="step"><n>4</n><b>Review</b><span>Essay / short answer pending</span></div>
+            <div class="step"><n>5</n><b>Grade</b><span>Score + feedback → GRADED</span></div>
+          </div>
+          <p class="meta" style="margin-top:10px">Timer expiry marks EXPIRED with score 0. Max attempts enforced. One PRE and one FINAL per course.</p>
+        </article>
+
+        <article class="wf card">
+          <header><h3>10. Certificate issuance</h3><span class="meta">System issues · Org Admin revokes · Public verifies</span></header>
+          <div class="flow">
+            <div class="step"><n>1</n><b>Eligibility</b><span>100% + passing final if present</span></div>
+            <div class="step"><n>2</n><b>Number</b><span>{PREFIX}-{YEAR}-… globally unique</span></div>
+            <div class="step"><n>3</n><b>Verify</b><span>/verify/[number], PNG download</span></div>
+            <div class="step"><n>4</n><b>Recertify</b><span>Job may expire cert and reopen enrollment</span></div>
+          </div>
+        </article>
+
+        <article class="wf card">
+          <header><h3>11. Analytics and reports</h3><span class="meta">Org Admin, Manager (subtree), Instructor (own courses)</span></header>
+          <div class="flow">
+            <div class="step"><n>1</n><b>Hub</b><span>/analytics with date and org filters</span></div>
+            <div class="step"><n>2</n><b>Drill</b><span>Learners, courses, compliance, ROI, xAPI</span></div>
+            <div class="step"><n>3</n><b>Operate</b><span>/reports export or schedule</span></div>
+          </div>
+        </article>
+
+        <article class="wf card">
+          <header><h3>12. Platform operations</h3><span class="meta">Super Admin + host operations</span></header>
+          <div class="flow">
+            <div class="step"><n>1</n><b>Console</b><span>Create / patch / suspend tenants</span></div>
+            <div class="step"><n>2</n><b>Audit</b><span>Platform-wide log</span></div>
+            <div class="step"><n>3</n><b>Jobs</b><span>HTTP calls with X-Job-Secret</span></div>
+          </div>
+        </article>
+
+        <article class="wf card">
+          <header><h3>13. File and media upload</h3><span class="meta">Authors, avatars, certificate assets</span></header>
+          <table>
+            <thead><tr><th>Asset</th><th>Limit</th><th>Notes</th></tr></thead>
+            <tbody>
+              <tr><td>Avatar / thumbnail</td><td>1 MB</td><td>Authenticated media API</td></tr>
+              <tr><td>Intro or lesson video</td><td>80 MB</td><td>No transcoding / ABR</td></tr>
+              <tr><td>Lesson document</td><td>25 MB</td><td>PDF and slides</td></tr>
+              <tr><td>SCORM package</td><td>100 MB</td><td>Version 1.2 only</td></tr>
+              <tr><td>Certificate images</td><td>~2.5 MB body</td><td>Logo, signature, background</td></tr>
+            </tbody>
+          </table>
+        </article>
+
+        <article class="wf card">
+          <header><h3>14. Learning path assignment</h3><span class="meta">Path author + assigner + learner</span></header>
+          <div class="flow">
+            <div class="step"><n>1</n><b>Publish path</b><span>Ordered courses, required flags</span></div>
+            <div class="step"><n>2</n><b>Assign tree</b><span>Same five target types</span></div>
+            <div class="step"><n>3</n><b>Unlock</b><span>PATH_COURSE_UNLOCKED</span></div>
+            <div class="step"><n>4</n><b>Path certificate</b><span>When required courses complete</span></div>
+          </div>
+        </article>
+
+        <article class="wf card">
+          <header><h3>15. Live session (ILT / VILT)</h3><span class="meta">Instructor creates · learner registers · attendance marked</span></header>
+          <div class="flow">
+            <div class="step"><n>1</n><b>Schedule</b><span>Time, timezone, location or URL, capacity</span></div>
+            <div class="step"><n>2</n><b>Register</b><span>Enrolled learners only</span></div>
+            <div class="step"><n>3</n><b>Attend</b><span>ATTENDED / NO_SHOW / CANCELLED</span></div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="block" id="ia">
+      <div class="wrap">
+        <p class="eyebrow">08 · Information architecture</p>
+        <h2>Permission-filtered navigation. Clear nouns.</h2>
+        <div class="grid-2">
+          <div class="card">
+            <h3>Primary app areas</h3>
+            <p class="meta" style="margin:8px 0">Dashboard · Catalog · Community · Courses / Studio · Learning paths · Organization · Announcements · Users · Enrollments · Question banks · Grading · Analytics · Reports · Skills · Audit · Certificates · Settings · Integrations</p>
+            <p class="meta">Platform: Overview, Organizations, Audit. Public: login, register, reset, invite, certificate verify. Learn player: /learn/[courseId].</p>
+          </div>
+          <div>
+            <div class="er">Organization
+  ├─ Users × Roles (ORG_ADMIN, MANAGER, INSTRUCTOR, EMPLOYEE)
+  ├─ Division → Department → Team
+  ├─ Course → Module → Lesson → Enrollment → Progress
+  │    ├─ Assessment → Attempt → Certificate
+  │    └─ TrainingSession → Registration
+  ├─ LearningPath → PathEnrollment → PathCertificate
+  └─ QuestionBank → BankQuestion</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="security">
+      <div class="wrap">
+        <p class="eyebrow">09 · Security, compliance, trust</p>
+        <h2>Tenant isolation you can explain in a security review.</h2>
+        <div class="grid-3">
+          <article class="card"><h3>Identity</h3><p class="meta">Passwords hashed with bcrypt (production cost 12+). Short-lived access tokens, rotating refresh. Optional authenticator MFA. Optional company OIDC.</p></article>
+          <article class="card"><h3>Authorization</h3><p class="meta">43 named permissions. Managers confined to their department. Instructors write only courses they created. Employees stay on self.</p></article>
+          <article class="card"><h3>Isolation</h3><p class="meta">Every learner, course, and certificate belongs to one organization. Org users cannot switch tenant via query parameters. Platform access is explicit and audited.</p></article>
+          <article class="card"><h3>Uploads</h3><p class="meta">Files are not world-readable. Direct /uploads is blocked. Playback goes through an authenticated media service.</p></article>
+          <article class="card"><h3>Audit &amp; proof</h3><p class="meta">Mutating actions log actor, action, resource, request id, IP. Certificates are uniquely numbered and publicly verifiable (30 lookups / minute).</p></article>
+          <article class="card"><h3>Honest boundary</h3><p class="meta">We do not claim SOC 2, ISO 27001, GDPR DPA, or HIPAA — none are evidenced in the product. Email, Redis-backed limits, and object storage are go-live decisions.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="nfr">
+      <div class="wrap">
+        <p class="eyebrow">10 · Architecture for a technical buyer</p>
+        <h2>Modern stack. Capacity proven in a pilot — not invented here.</h2>
+        <div class="grid-2">
+          <table>
+            <thead><tr><th>Layer</th><th>Technology</th></tr></thead>
+            <tbody>
+              <tr><td>Web</td><td>Next.js 15, React 19, TypeScript, Tailwind, shadcn, TanStack Query, Geist, dark mode</td></tr>
+              <tr><td>API</td><td>Node.js 22, Express 4, Zod, Prisma 6, JWT, otplib, PDFKit, ExcelJS, Helmet</td></tr>
+              <tr><td>Data</td><td>PostgreSQL 16, organization_id on tenant tables</td></tr>
+              <tr><td>Media</td><td>Local disk + authenticated media route; SCORM 1.2 unzip + HTML player</td></tr>
+              <tr><td>Ops</td><td>/health, /ready (DB), OpenAPI JSON, HTTP job endpoints</td></tr>
+            </tbody>
+          </table>
+          <div class="card">
+            <h3>Designed limits</h3>
+            <ul style="margin:10px 0 0 18px;color:var(--muted)">
+              <li>Pagination default 25, max 100; catalog 24 per page</li>
+              <li>Enrollment cascade in chunks of 500</li>
+              <li>JSON body 1 MB; large media on dedicated routes</li>
+              <li>If cron is down, reminders and recertify do not run</li>
+              <li>No published concurrency or CDN numbers — treat scale as a pilot proof point</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="rollout">
+      <div class="wrap">
+        <p class="eyebrow">11 · Engagement model</p>
+        <h2>Discovery → pilot → production. Do not skip the mail and jobs.</h2>
+        <div class="phases">
+          <article class="card phase"><div class="n">0</div><h3>Discovery</h3><p class="meta">1–2 weeks. Brand, register on/off, SSO vs MFA, org tree, mandatory courses, hosting, KPIs.</p></article>
+          <article class="card phase"><div class="n">1</div><h3>Pilot</h3><p class="meta">4–6 weeks. 50–200 learners, 3–5 courses, one path, branded certificate, weekly overdue review.</p></article>
+          <article class="card phase"><div class="n">2</div><h3>Production</h3><p class="meta">6–10 weeks. CSV/SSO, cron, SMTP, backups, disable public register, compliance ZIP rehearsal, optional BI key.</p></article>
+          <article class="card phase"><div class="n">3</div><h3>Harden</h3><p class="meta">Redis for limits/idempotency, object storage, horizontal API, load-test video and SCORM.</p></article>
+        </div>
+        <div class="grid-2" style="margin-top:18px">
+          <div class="card">
+            <h3>Out of the box</h3>
+            <p class="meta">Four org roles + Super Admin, certificate designer, USD/MMK, OIDC, local uploads, HTTP jobs, reports in three formats.</p>
+          </div>
+          <div class="card">
+            <h3>Typical statement of work</h3>
+            <p class="meta">Custom roles, SAML/SCIM, S3/Azure Blob, white-label, extra webhooks, native apps, SCORM 2004, any AI feature. Do not sell these as standard until they are in a SOW.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="kpis">
+      <div class="wrap">
+        <p class="eyebrow">12 · Success the client can see in-product</p>
+        <h2>KPIs without a second BI tool — unless you want one.</h2>
+        <div class="chips" style="margin-bottom:16px">
+          <span class="chip">Active learners</span>
+          <span class="chip">Enrollments</span>
+          <span class="chip">Completion rate</span>
+          <span class="chip">Certificates issued</span>
+          <span class="chip">Overdue training</span>
+          <span class="chip">Assessment pass rate</span>
+          <span class="chip">Engagement / trends</span>
+          <span class="chip">Training ROI</span>
+          <span class="chip">Skill coverage</span>
+          <span class="chip">Login activity</span>
+        </div>
+        <p class="note">Recommended pilot bar: ≥ 90% of assigned learners enrolled; ≥ 80% completion of the flagship compliance course within the due window; zero cross-tenant findings; live certificate verify to an auditor.</p>
+      </div>
+    </section>
+
+    <section class="block" id="why">
+      <div class="wrap">
+        <p class="eyebrow">13 · Why Zynext TalentHub vs a generic LMS</p>
+        <h2>The org tree is a first-class object. The certificate is a product.</h2>
+        <div class="grid-3">
+          <article class="card"><h3>Hierarchy, not groups bolted on</h3><p class="meta">Drag-and-drop tree, assignment cascade, manager subtree, move-reconcile.</p></article>
+          <article class="card"><h3>Two control planes</h3><p class="meta">Tenant workspace and a Super Admin console with isolated identity — built to operate as multi-tenant SaaS.</p></article>
+          <article class="card"><h3>Completion is policy</h3><p class="meta">Required lessons, percentage rules, pre-test gates, final exam lock, recertify that invalidates the old pass.</p></article>
+          <article class="card"><h3>Proof as a feature</h3><p class="meta">Designer, unique numbers, public URL, path certificates, expiry jobs — not a plugin afterthought.</p></article>
+          <article class="card"><h3>Operator analytics pack</h3><p class="meta">Eleven hubs including compliance and ROI, scheduled multi-format reports, one compliance ZIP.</p></article>
+          <article class="card"><h3>Security visible in the IA</h3><p class="meta">Slug-scoped login, MFA, OIDC, lockout, media ACL, audit, hashed API keys.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="honest">
+      <div class="wrap">
+        <p class="eyebrow">14 · Honest scope</p>
+        <h2>A credible proposal states this before procurement does.</h2>
+        <table>
+          <thead><tr><th>Item</th><th>Severity</th><th>What it means for you</th></tr></thead>
+          <tbody>
+            <tr><td>Email logs “queued” rather than SMTP send</td><td>High for go-live</td><td>Invites, resets, certificate mail, and scheduled reports need a real transport.</td></tr>
+            <tr><td>Jobs are not self-running</td><td>High</td><td>Host must cron the job secret endpoints.</td></tr>
+            <tr><td>In-memory rate limit and enrollment idempotency</td><td>High at scale</td><td>Unsafe across multiple API processes until Redis (or equivalent).</td></tr>
+            <tr><td>Local disk media</td><td>High at scale</td><td>No CDN; multi-instance sharing is a project.</td></tr>
+            <tr><td>Public /register</td><td>Medium</td><td>Creates a new tenant — usually off for enterprise.</td></tr>
+            <tr><td>Four roles only · SCORM 1.2 only · thin integrations</td><td>Medium</td><td>No custom roles, no SCORM 2004, one API scope, two webhook events.</td></tr>
+            <tr><td>No AI, no native apps, no SOC/ISO claim</td><td>RFP risk if oversold</td><td>We will not invent certifications or generative features.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="block" id="next">
+      <div class="wrap">
+        <div class="callout">
+          <div>
+            <p class="eyebrow" style="color:#C7CBFF">15 · Next step</p>
+            <h2>A half-day discovery. A sandbox tenant. A live certificate verify.</h2>
+            <p>Walk the org tree, Course Studio, grading queue, analytics, and public verify page. Leave with a one-page decision log: identity, mandatory curriculum, hosting, and whether self-registration stays on.</p>
+          </div>
+          <div>
+            <p style="font-size:13px;color:#A9B2C9;margin-bottom:12px">Then: pilot one department → production (SMTP, cron, backups) → optional SOW for object storage, Redis, SAML/SCIM, or white-label.</p>
+            <p class="btn" style="display:inline-block;margin:0">Schedule the discovery workshop</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="glossary">
+      <div class="wrap">
+        <p class="eyebrow">Appendix · Glossary</p>
+        <h2>Terms as Zynext TalentHub uses them</h2>
+        <table>
+          <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Organization / tenant</td><td>Isolated customer workspace. Login requires its slug.</td></tr>
+            <tr><td>Org tree</td><td>Division → Department → Team hierarchy.</td></tr>
+            <tr><td>Assignment vs enrollment</td><td>Assignment is the targeting rule. Enrollment is a person’s course instance.</td></tr>
+            <tr><td>Course Studio</td><td>Authoring UI at /courses/[id].</td></tr>
+            <tr><td>Completion mode</td><td>Rule that treats the course as complete.</td></tr>
+            <tr><td>Assessment kinds</td><td>PRE, FINAL, SURVEY, MODULE_QUIZ.</td></tr>
+            <tr><td>Grading queue</td><td>Manual scoring of short answer and essay.</td></tr>
+            <tr><td>Certificate number</td><td>Globally unique id used on /verify.</td></tr>
+            <tr><td>Recertify</td><td>Time-based re-open of completed training.</td></tr>
+            <tr><td>SCORM</td><td>Imported packages, version 1.2 only.</td></tr>
+            <tr><td>ILT / VILT</td><td>In-person / virtual instructor-led sessions.</td></tr>
+            <tr><td>Compliance package</td><td>ZIP of enrollments, overdue training, and audit CSV.</td></tr>
+            <tr><td>Job secret</td><td>Header that authorizes scheduled maintenance jobs.</td></tr>
+            <tr><td>Zynext TalentHub</td><td>The product name used across the learner app, admin, platform console, and this proposal.</td></tr>
+          </tbody>
+        </table>
+
+        <h3 style="margin:28px 0 10px">Headlines you can put on a slide</h3>
+        <div class="grid-2">
+          <ul style="margin-left:18px;color:var(--muted)">
+            <li>Training that follows your org chart — not a flat class list.</li>
+            <li>Assign once to a department; enroll everyone who belongs there.</li>
+            <li>Completion is a rule, not a checkbox.</li>
+            <li>Seven question types. A grading queue for the ones that need a human.</li>
+            <li>Certificates with unique numbers the public can verify.</li>
+            <li>Recertify on a clock — expired proof does not linger.</li>
+          </ul>
+          <ul style="margin-left:18px;color:var(--muted)">
+            <li>Managers see their people. Nobody else.</li>
+            <li>Eleven analytics views. Seven reports. One compliance ZIP.</li>
+            <li>Multi-tenant by design: many organizations, one platform operator.</li>
+            <li>MFA, OIDC, lockout, and an audit trail — before the questionnaire.</li>
+            <li>From invite to issued certificate, without a second tool for quizzes or PDFs.</li>
+            <li>Course Studio: video, documents, SCORM, live sessions, and exams in one outline.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <footer class="doc">
+      <div class="wrap">
+        <p><strong style="color:var(--ink)">Zynext TalentHub</strong> client proposal · Grounded in the running product as of 1 September 2026 · Not a claim of SOC 2, ISO 27001, customer counts, or uptime. Companion source: <code>docs/proposals/CLIENT_PROPOSAL.md</code>.</p>
+      </div>
+    </footer>
+  </main>
+</body>
+</html>

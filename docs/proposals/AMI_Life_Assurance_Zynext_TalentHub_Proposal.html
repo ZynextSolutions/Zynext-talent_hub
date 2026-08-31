@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Proposal for AMI Life Assurance — Zynext TalentHub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --navy: #15233B;
+      --navy-2: #1E3358;
+      --gold: #C4A35A;
+      --gold-2: #E8D7A8;
+      --ink: #1A2332;
+      --muted: #667085;
+      --line: #E6E1D6;
+      --paper: #F4F0E8;
+      --white: #FFFCF7;
+      --card: #FFFFFF;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: Outfit, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+      font-size: 15.5px;
+      line-height: 1.55;
+    }
+    p { margin: 0 0 0.8em; }
+    p:last-child { margin-bottom: 0; }
+    a { color: var(--navy-2); }
+    svg { display: block; }
+    .bar {
+      position: sticky; top: 0; z-index: 30;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px 32px; background: rgba(255,252,247,0.92);
+      backdrop-filter: blur(12px); border-bottom: 1px solid var(--line);
+    }
+    .bar b { font-size: 13px; }
+    .bar span { color: var(--muted); font-size: 12.5px; font-weight: 500; margin-left: 10px; }
+    .bar button {
+      font: 600 13px Outfit, sans-serif; cursor: pointer;
+      background: var(--navy); color: #fff; border: 0; padding: 9px 16px; border-radius: 999px;
+    }
+    .wrap { max-width: 1120px; margin: 0 auto; padding: 0 32px 72px; }
+    .cover {
+      position: relative; overflow: hidden;
+      background: var(--navy); color: #F7F1E4;
+      padding: 72px 32px 56px;
+    }
+    .cover::before {
+      content: ""; position: absolute; width: 520px; height: 520px; right: -120px; top: -180px;
+      border-radius: 50%; background: radial-gradient(circle, rgba(196,163,90,0.28), transparent 68%);
+    }
+    .cover::after {
+      content: ""; position: absolute; width: 280px; height: 280px; left: -80px; bottom: -100px;
+      border: 48px solid rgba(196,163,90,0.08); border-radius: 50%;
+    }
+    .cover-inner { position: relative; z-index: 1; max-width: 1120px; margin: 0 auto; }
+    .pill {
+      display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.14em;
+      text-transform: uppercase; color: var(--gold-2); border: 1px solid rgba(196,163,90,0.45);
+      padding: 6px 12px; border-radius: 999px; margin-bottom: 28px;
+    }
+    .cover h1 {
+      font-family: Fraunces, Georgia, serif; font-weight: 400;
+      font-size: clamp(36px, 5vw, 58px); line-height: 1.08; max-width: 14ch; margin: 8px 0 18px;
+    }
+    .cover .client { font-family: Fraunces, Georgia, serif; font-size: 28px; color: var(--gold-2); }
+    .cover .lede { max-width: 54ch; color: #C9D0DC; font-size: 17px; }
+    .cover-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 40px;
+    }
+    .cover-grid div {
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px; padding: 16px 18px;
+    }
+    .cover-grid small { display: block; color: #9AA6B8; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+    .cover-grid b { font-weight: 600; font-size: 14px; }
+    h2 {
+      font-family: Fraunces, Georgia, serif; font-size: 30px; font-weight: 600;
+      color: var(--navy); margin: 56px 0 14px;
+    }
+    h3 { font-size: 16px; margin: 0 0 8px; color: var(--navy); }
+    .intro { color: var(--muted); max-width: 68ch; margin-bottom: 22px; }
+    .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .g3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .g4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .card {
+      background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 20px;
+    }
+    .q {
+      min-height: 148px;
+    }
+    .q .n {
+      width: 32px; height: 32px; border-radius: 10px; background: #F3EBD4; color: var(--navy);
+      display: grid; place-items: center; font-weight: 700; font-size: 13px; margin-bottom: 12px;
+    }
+    .role .ico {
+      width: 44px; height: 44px; border-radius: 14px; background: var(--navy); color: var(--gold-2);
+      display: grid; place-items: center; margin-bottom: 12px;
+    }
+    .role ul { margin: 10px 0 0 16px; color: var(--muted); font-size: 13.5px; }
+    .steps {
+      display: flex; gap: 8px; align-items: stretch; flex-wrap: wrap;
+    }
+    .step {
+      flex: 1 1 140px; background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 14px;
+      position: relative;
+    }
+    .step em {
+      font-style: normal; display: grid; place-items: center;
+      width: 26px; height: 26px; border-radius: 50%; background: var(--gold); color: var(--navy);
+      font-size: 12px; font-weight: 700; margin-bottom: 8px;
+    }
+    .step b { display: block; font-size: 13.5px; }
+    .step span { display: block; color: var(--muted); font-size: 12.5px; margin-top: 4px; }
+    .tree {
+      display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 8px 0;
+    }
+    .node {
+      background: var(--navy); color: #fff; border-radius: 12px; padding: 10px 18px; font-weight: 600; font-size: 14px;
+    }
+    .node.gold { background: var(--gold); color: var(--navy); }
+    .node.light { background: #fff; color: var(--navy); border: 1px solid var(--line); }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+    .vline { width: 2px; height: 16px; background: var(--gold); }
+    .hlines { width: 70%; height: 2px; background: var(--gold); position: relative; }
+    .cert {
+      display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 16px; align-items: stretch;
+    }
+    .cert-mock {
+      background: linear-gradient(160deg, #15233B, #2A456F);
+      color: #F7F1E4; border-radius: 18px; padding: 28px 26px; min-height: 220px;
+      border: 1px solid rgba(196,163,90,0.4);
+    }
+    .cert-mock .tag { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold-2); }
+    .cert-mock h4 { font-family: Fraunces, Georgia, serif; font-size: 26px; font-weight: 400; margin: 18px 0 8px; }
+    .cert-mock .num { font-family: ui-monospace, monospace; font-size: 13px; color: var(--gold-2); margin-top: 24px; }
+    .phases { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .phase { position: relative; min-height: 180px; }
+    .phase .t { font-family: Fraunces, Georgia, serif; font-size: 28px; color: var(--gold); }
+    table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 16px; overflow: hidden; font-size: 14px; }
+    th, td { text-align: left; vertical-align: top; padding: 11px 12px; border-bottom: 1px solid var(--line); }
+    th { background: #F7F3EA; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+    .cta {
+      margin-top: 48px; background: var(--navy); color: #F7F1E4; border-radius: 24px;
+      padding: 36px 40px; display: grid; grid-template-columns: 1.5fr 0.8fr; gap: 24px; align-items: center;
+    }
+    .cta h2 { color: #F7F1E4; margin: 0 0 10px; }
+    .cta p { color: #C9D0DC; }
+    .cta .btn {
+      display: inline-block; background: var(--gold); color: var(--navy); font-weight: 700;
+      padding: 12px 18px; border-radius: 999px; text-decoration: none;
+    }
+    footer.doc { margin-top: 40px; color: var(--muted); font-size: 12.5px; }
+    .ico svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+    @media (max-width: 900px) {
+      .g2, .g3, .g4, .cover-grid, .phases, .cert, .cta { grid-template-columns: 1fr; }
+    }
+    @media print {
+      .bar { display: none !important; }
+      body { background: #fff; }
+      .wrap { max-width: none; padding: 0 10mm 12mm; }
+      .cover { padding: 22mm 10mm 16mm; break-after: page; }
+      h2 { break-after: avoid; }
+      .card, .step, .phase, table, .cta, .cert-mock { break-inside: avoid; }
+      * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      @page { size: A4; margin: 12mm 10mm 14mm; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bar">
+    <div><b>Zynext TalentHub</b><span>Proposal for AMI Life Assurance</span></div>
+    <button type="button" onclick="window.print()">Print or save PDF</button>
+  </div>
+
+  <header class="cover">
+    <div class="cover-inner">
+      <p class="pill">Confidential · ZTH-AMI-2026-001 · September 2026</p>
+      <p class="client">AMI Life Assurance</p>
+      <h1>Training you can assign, prove, and show.</h1>
+      <p class="lede">Zynext TalentHub for staff and agency competence: product knowledge, claims practice, conduct, numbered certificates, and department reports.</p>
+      <div class="cover-grid">
+        <div><small>Prepared for</small><b>AMI Life Assurance</b></div>
+        <div><small>Prepared by</small><b>Zynext</b></div>
+        <div><small>Readers</small><b>Management, HR, Compliance, IT</b></div>
+        <div><small>Document</small><b>Implementation proposal</b></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <h2>Four questions this platform is built to answer</h2>
+    <p class="intro">Spreadsheets assign training. Word files look like certificates. Neither tells a supervisor, with certainty, who is current.</p>
+    <div class="g2">
+      <article class="card q"><div class="n">01</div><h3>Who was assigned, and who finished?</h3><p>Assign to the company, a division, a department, a team, or a person. Status moves from enrolled to in progress to completed.</p></article>
+      <article class="card q"><div class="n">02</div><h3>If someone changes team, does training follow?</h3><p>The organisation tree is the assignment source. When a person is moved, enrolments can be brought into line with the new seat.</p></article>
+      <article class="card q"><div class="n">03</div><h3>Does last year’s pass still count?</h3><p>Recertify on a clock. The old certificate can expire and the enrolment reopen so the programme is sat again.</p></article>
+      <article class="card q"><div class="n">04</div><h3>Can Compliance produce the file?</h3><p>Overdue reports, certificate lookup by number, and a zip of enrolments, overdue training, and the audit log.</p></article>
+    </div>
+
+    <h2>How AMI Life would use TalentHub</h2>
+    <p class="intro">One company workspace. People sign in with the organisation slug, email, and password. Authors publish programmes; managers assign them; learners complete them; certificates can be checked by number.</p>
+    <div class="g4">
+      <article class="card">
+        <div class="ico" style="color:var(--navy)"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h16"/></svg></div>
+        <h3>Learn</h3>
+        <p>Assigned work, due dates, catalogue, and a player for video, documents, quizzes, classroom, and SCORM 1.2.</p>
+      </article>
+      <article class="card">
+        <div class="ico" style="color:var(--navy)"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h5"/></svg></div>
+        <h3>Studio</h3>
+        <p>Modules, eight lesson types, live sessions with attendance, assessments, skills, and a publish history.</p>
+      </article>
+      <article class="card">
+        <div class="ico" style="color:var(--navy)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg></div>
+        <h3>Examine</h3>
+        <p>Pre-test, module quiz, final exam, or survey. Seven question types. A grading queue for short answer and essay.</p>
+      </article>
+      <article class="card">
+        <div class="ico" style="color:var(--navy)"><svg viewBox="0 0 24 24"><path d="M7 8h10v11H7z"/><path d="M9 8V6h6v2"/><path d="M10 13l1.5 1.5L14 12"/></svg></div>
+        <h3>Prove</h3>
+        <p>Numbered, branded certificates. Public verify page. Path certificates. Recertify cycles.</p>
+      </article>
+    </div>
+
+    <div class="g2" style="margin-top:16px">
+      <article class="card">
+        <h3>Organisation tree</h3>
+        <p style="color:var(--muted);margin-bottom:16px">Assign once to a department. Managers see only their own people.</p>
+        <div class="tree">
+          <div class="node">AMI Life Assurance</div>
+          <div class="vline"></div>
+          <div class="row">
+            <div class="node gold">Division</div>
+          </div>
+          <div class="vline"></div>
+          <div class="row">
+            <div class="node light">Department</div>
+            <div class="node light">Department</div>
+          </div>
+          <div class="vline"></div>
+          <div class="row">
+            <div class="node light">Team</div>
+            <div class="node light">Team</div>
+            <div class="node light">Person</div>
+          </div>
+        </div>
+      </article>
+      <article class="card">
+        <h3>What sits in Course Studio</h3>
+        <table>
+          <thead><tr><th>Kind</th><th>Typical use</th></tr></thead>
+          <tbody>
+            <tr><td>Video / reading / document</td><td>Product and procedure briefings</td></tr>
+            <tr><td>Knowledge check</td><td>Short quiz on a lesson</td></tr>
+            <tr><td>Discussion</td><td>Prompt plus course forum</td></tr>
+            <tr><td>Classroom / virtual class</td><td>Capacity, register, attendance</td></tr>
+            <tr><td>SCORM 1.2</td><td>Imported packaged content</td></tr>
+          </tbody>
+        </table>
+        <p style="color:var(--muted);font-size:13.5px">Completion can be all lessons, required lessons only, or a percentage. A final exam, if present, is taken only at full progress and can hold the certificate until passed.</p>
+      </article>
+    </div>
+
+    <h2>Who signs in, and what they can do</h2>
+    <p class="intro">Four organisation roles. Navigation follows permission, so a learner never sees the admin desk. There is no custom role builder in this version.</p>
+    <div class="g4">
+      <article class="card role">
+        <div class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"/><path d="M5 19c1.5-3 4-5 7-5s5.5 2 7 5"/></svg></div>
+        <h3>Organisation admin</h3>
+        <p>HR or L&amp;D, with Compliance as needed.</p>
+        <ul><li>Tree, users, CSV, SSO</li><li>Studio, banks, grading</li><li>Reports, revoke certificates</li></ul>
+      </article>
+      <article class="card role">
+        <div class="ico"><svg viewBox="0 0 24 24"><path d="M4 18V8l8-4 8 4v10"/><path d="M9 18v-5h6v5"/></svg></div>
+        <h3>Manager</h3>
+        <p>Department supervisor, placed on a department.</p>
+        <ul><li>Invite employees in scope</li><li>Assign in that department</li><li>Read subtree reports only</li></ul>
+      </article>
+      <article class="card role">
+        <div class="ico"><svg viewBox="0 0 24 24"><path d="M4 19V5h10l6 6v8z"/><path d="M14 5v6h6"/></svg></div>
+        <h3>Instructor</h3>
+        <p>Product, claims, or training author.</p>
+        <ul><li>Build courses they created</li><li>Banks, sessions, grading</li><li>Cannot edit the org tree</li></ul>
+      </article>
+      <article class="card role">
+        <div class="ico"><svg viewBox="0 0 24 24"><path d="M4 19h16"/><path d="M7 19V9l5-3 5 3v10"/></svg></div>
+        <h3>Employee</h3>
+        <p>Staff and, if you enrol them, agents.</p>
+        <ul><li>Learn and sit tests</li><li>Own certificates only</li><li>No one else’s file</li></ul>
+      </article>
+    </div>
+
+    <h2>From draft course to a numbered certificate</h2>
+    <p class="intro">The same path whether the programme is induction, a product briefing, or a conduct refresher.</p>
+    <div class="steps">
+      <div class="step"><em>1</em><b>Draft</b><span>Create the course. It stays unpublished.</span></div>
+      <div class="step"><em>2</em><b>Build</b><span>Outline, media, classroom dates, question bank.</span></div>
+      <div class="step"><em>3</em><b>Examine</b><span>Optional pre-test. Final exam if proof is required.</span></div>
+      <div class="step"><em>4</em><b>Publish</b><span>A revision is stored. Then it may be assigned.</span></div>
+      <div class="step"><em>5</em><b>Assign</b><span>Target, due date, reminder, recertify interval.</span></div>
+      <div class="step"><em>6</em><b>Complete</b><span>Progress rule, then exam, then certificate.</span></div>
+    </div>
+
+    <div class="cert" style="margin-top:22px">
+      <div class="cert-mock">
+        <div class="tag">Certificate of completion</div>
+        <h4>AMI Life Assurance</h4>
+        <p>Issued when the course is complete and, if a final examination exists, that examination is passed.</p>
+        <div class="num">AMI-2026-••••••••</div>
+      </div>
+      <article class="card">
+        <h3>Verify and recertify</h3>
+        <p>Each certificate has a unique number. Anyone with the number can open the public verify page and download an image. Organisation admin can revoke.</p>
+        <p>Set recertify-every-N-days on the assignment. When the window ends, the live certificate can expire and the person is enrolled again. Last year’s pass does not sit on file as if it were still valid.</p>
+        <p style="color:var(--muted)">AMI Life sets the number prefix, logo, signature, and layout (midnight, ivory, or slate).</p>
+      </article>
+    </div>
+
+    <h2>Learner path, in order</h2>
+    <div class="steps">
+      <div class="step"><em>A</em><b>Enrol</b><span>By assignment, learning path, or catalogue if you allow it.</span></div>
+      <div class="step"><em>B</em><b>Pre-test</b><span>Only if you require it before the outline.</span></div>
+      <div class="step"><em>C</em><b>Learn</b><span>Lessons open by prerequisite. Video position is kept.</span></div>
+      <div class="step"><em>D</em><b>Final</b><span>Available at 100% progress. Auto-score or grading queue.</span></div>
+      <div class="step"><em>E</em><b>Proof</b><span>Certificate issued. Overdue is reported, not a lock-out.</span></div>
+    </div>
+
+    <h2>Reports you can open without a second tool</h2>
+    <div class="g3">
+      <article class="card"><h3>Analytics</h3><p>Eleven views, including learning, assessments, overdue, skills, and a simple cost view in MMK or USD.</p></article>
+      <article class="card"><h3>Operational reports</h3><p>Enrolments, completions, progress, assessments, certificates, overdue training, activity. CSV, PDF, or Excel. Optional email schedule.</p></article>
+      <article class="card"><h3>Inspection pack</h3><p>One zip: enrolments, overdue training, audit log, and a manifest.</p></article>
+    </div>
+
+    <h2>Access and records</h2>
+    <div class="g3">
+      <article class="card"><h3>Isolation</h3><p>Every learner, course, and certificate belongs to AMI Life’s workspace. Users cannot switch company by changing a web address.</p></article>
+      <article class="card"><h3>Sign-in</h3><p>Password policy, lockout after ten failures, optional authenticator MFA, optional company SSO. Short access tokens and rotating refresh tokens.</p></article>
+      <article class="card"><h3>Files and audit</h3><p>Uploads are not left on an open folder. Changes write who did what, on which record, with a request id and IP.</p></article>
+    </div>
+
+    <h2>Suggested introduction</h2>
+    <div class="phases">
+      <article class="card phase"><div class="t">1</div><h3>Workshop</h3><p>Half a day. Organisation tree, first mandatory programmes, who administers, certificate branding. Public company registration left off.</p></article>
+      <article class="card phase"><div class="t">2</div><h3>Pilot</h3><p>Four to six weeks. One or two departments, three to five courses, weekly overdue review, live certificate lookup.</p></article>
+      <article class="card phase"><div class="t">3</div><h3>Production</h3><p>User load by CSV or SSO, job schedule, mail, backups, rehearsal of the inspection pack.</p></article>
+      <article class="card phase"><div class="t">4</div><h3>Scale</h3><p>As usage grows: shared cache, object storage for media, a load test of video and SCORM.</p></article>
+    </div>
+
+    <h2>In the standard system, and what would be extra work</h2>
+    <div class="g2">
+      <article class="card">
+        <h3>Included</h3>
+        <ul style="margin:8px 0 0 18px;color:var(--muted)">
+          <li>Four organisation roles and a platform operator</li>
+          <li>Course Studio, assessments, banks, grading queue</li>
+          <li>Numbered certificates and public verify</li>
+          <li>Learning paths and classroom attendance</li>
+          <li>SCORM 1.2, OIDC, MMK and USD training cost</li>
+          <li>CSV user import and scheduled reports</li>
+        </ul>
+      </article>
+      <article class="card">
+        <h3>By later agreement only</h3>
+        <ul style="margin:8px 0 0 18px;color:var(--muted)">
+          <li>Extra named roles, SAML or SCIM</li>
+          <li>Object storage or a content network</li>
+          <li>A native mobile app</li>
+          <li>SCORM 2004 or a remote learning-record store</li>
+          <li>Generative authoring or machine marking</li>
+        </ul>
+        <p style="margin-top:12px;color:var(--muted)">For live running, AMI Life (or the host) schedules reminder and recertify jobs and completes production mail. MFA can be required as a policy; it is optional per user in the product today.</p>
+      </article>
+    </div>
+
+    <div class="cta" id="next">
+      <div>
+        <h2>A working session, then a sandbox with your certificate.</h2>
+        <p>Walk the organisation tree, Course Studio, a short examination, the grading queue, a manager’s overdue view, and lookup of a certificate number, using AMI Life programmes rather than a generic sample course.</p>
+      </div>
+      <div>
+        <p class="btn">Schedule the workshop</p>
+      </div>
+    </div>
+
+    <h2>Appendix for Information Technology</h2>
+    <p class="intro">Business readers can stop above. This table is the running stack and operating limits.</p>
+    <table>
+      <thead><tr><th>Item</th><th>Detail</th></tr></thead>
+      <tbody>
+        <tr><td>Web / API</td><td>Next.js 15, React 19, Express, Prisma, PostgreSQL 16</td></tr>
+        <tr><td>Session</td><td>JWT access 15 minutes; rotating refresh 7 days</td></tr>
+        <tr><td>Permissions</td><td>43 named permissions; manager scope is the department subtree</td></tr>
+        <tr><td>Assessments</td><td>Pre, final, survey, module quiz; default pass 70%; default three attempts</td></tr>
+        <tr><td>Media caps</td><td>Thumbnail 1 MB; document 25 MB; video 80 MB; SCORM 1.2 zip 100 MB</td></tr>
+        <tr><td>Jobs</td><td>HTTP with a job secret: reminders, recertify, scheduled reports, expiry notices, analytics snapshots</td></tr>
+        <tr><td>Checks</td><td>Liveness; readiness includes a database ping</td></tr>
+      </tbody>
+    </table>
+    <p style="color:var(--muted)">Public registration creates a new company and should stay off for AMI Life. Mail for invites and resets needs SMTP in the deployed environment. Rate limits and enrolment idempotency are in process memory until a shared cache is added. Media is on local disk in the current build.</p>
+
+    <footer class="doc">
+      Zynext TalentHub · Proposal for AMI Life Assurance · ZTH-AMI-2026-001 · September 2026 · Confidential. Describes the current product. Not an insurance contract.
+    </footer>
+  </main>
+</body>
+</html>

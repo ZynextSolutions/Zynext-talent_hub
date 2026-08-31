@@ -1,0 +1,106 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 224 71% 4%;
+    --card: 0 0% 100%;
+    --card-foreground: 224 71% 4%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 71% 4%;
+    --primary: 239 84% 67%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 224 71% 4%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
+    --accent: 239 84% 67%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 239 84% 67%;
+    --radius: 0.625rem;
+    --sidebar: 0 0% 98%;
+    --sidebar-foreground: 224 71% 4%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-accent: 239 84% 67%;
+    --hero-from: 239 84% 97%;
+    --hero-via: 262 83% 96%;
+    --hero-to: 220 14% 96%;
+    --kpi-from: 0 0% 100%;
+    --kpi-to: 239 84% 98%;
+  }
+
+  .dark {
+    --background: 224 71% 4%;
+    --foreground: 210 20% 98%;
+    --card: 224 47% 8%;
+    --card-foreground: 210 20% 98%;
+    --popover: 224 47% 8%;
+    --popover-foreground: 210 20% 98%;
+    --primary: 239 84% 74%;
+    --primary-foreground: 224 71% 4%;
+    --secondary: 215 28% 12%;
+    --secondary-foreground: 210 20% 98%;
+    --muted: 215 28% 12%;
+    --muted-foreground: 217 10% 65%;
+    --accent: 239 84% 74%;
+    --accent-foreground: 224 71% 4%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 20% 98%;
+    --border: 215 28% 16%;
+    --input: 215 28% 16%;
+    --ring: 239 84% 74%;
+    --sidebar: 224 47% 6%;
+    --sidebar-foreground: 210 20% 98%;
+    --sidebar-border: 215 28% 14%;
+    --sidebar-accent: 239 84% 74%;
+    --hero-from: 239 50% 12%;
+    --hero-via: 262 40% 10%;
+    --hero-to: 224 47% 6%;
+    --kpi-from: 224 47% 10%;
+    --kpi-to: 239 40% 14%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .glass {
+    @apply bg-background/80 backdrop-blur-xl;
+  }
+
+  .gradient-border {
+    position: relative;
+  }
+
+  .gradient-border::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, #6366f1, #818cf8, transparent);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+}

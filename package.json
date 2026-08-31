@@ -1,0 +1,45 @@
+{
+  "name": "cor-lms",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Multi-tenant corporate Learning Management System",
+  "scripts": {
+    "dev": "concurrently -n api,web -c blue,green \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
+    "dev:api": "npm run dev --prefix backend",
+    "dev:web": "npm run dev --prefix frontend",
+    "build": "npm run build --prefix backend && npm run build --prefix frontend",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:push": "prisma db push",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:studio": "prisma studio",
+    "test:smoke": "tsx scripts/smoke-test.ts",
+    "test:identity": "tsx scripts/identity-test.ts",
+    "test:course": "tsx scripts/course-test.ts",
+    "test:unit": "tsx --test backend/src/lib/completion.test.ts backend/src/lib/lesson-completion.test.ts backend/src/lib/assessment-questions.test.ts backend/src/lib/assessment-review.test.ts backend/src/lib/analytics-query.test.ts backend/src/lib/secret-box.test.ts backend/src/lib/ssrf.test.ts backend/src/lib/sso-redaction.test.ts backend/src/lib/scorm-package.test.ts backend/src/lib/scorm-access.test.ts backend/src/lib/scorm-ticket.test.ts backend/src/lib/media-access.test.ts backend/src/lib/job-secret.test.ts backend/src/domain/api-key-scopes.test.ts backend/src/lib/one-time-token.test.ts",
+    "test:integration": "npm run test:smoke && npm run test:course && npm run test:identity",
+    "test:ci": "npm run test:unit && npm run test:integration",
+    "postinstall": "prisma generate"
+  },
+  "devDependencies": {
+    "@types/adm-zip": "^0.5.8",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^22.10.0",
+    "adm-zip": "^0.6.0",
+    "concurrently": "^9.1.0",
+    "prisma": "^6.1.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.1.0",
+    "bcryptjs": "^2.4.3"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "overrides": {
+    "deepmerge-ts": "^8.0.1"
+  }
+}

@@ -1,0 +1,91 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Zynext TalentHub API",
+    "version": "1.0.0",
+    "description": "REST API for Zynext TalentHub tenant and platform operations."
+  },
+  "servers": [{ "url": "/api/v1" }],
+  "paths": {
+    "/analytics/dashboard": {
+      "get": {
+        "summary": "Executive dashboard KPIs",
+        "tags": ["Analytics"]
+      }
+    },
+    "/analytics/trends": {
+      "get": {
+        "summary": "Enrollment, completion, and engagement trends",
+        "tags": ["Analytics"]
+      }
+    },
+    "/analytics/skills": {
+      "get": {
+        "summary": "Skills coverage and gap analytics",
+        "tags": ["Analytics", "Skills"]
+      }
+    },
+    "/reports/{type}": {
+      "get": {
+        "summary": "Paginated operational report",
+        "tags": ["Reports"]
+      }
+    },
+    "/reports/{type}/export": {
+      "get": {
+        "summary": "Export report as CSV, PDF, or XLSX",
+        "tags": ["Reports"]
+      }
+    },
+    "/skills": {
+      "get": { "summary": "List skills", "tags": ["Skills"] },
+      "post": { "summary": "Create skill", "tags": ["Skills"] }
+    },
+    "/courses/{id}/skills": {
+      "get": { "summary": "Course skill mappings", "tags": ["Skills"] },
+      "put": { "summary": "Set course skill mappings", "tags": ["Skills"] }
+    },
+    "/audit-logs": {
+      "get": { "summary": "Tenant audit log entries", "tags": ["Compliance"] }
+    },
+    "/compliance/export": {
+      "get": { "summary": "Download regulatory compliance ZIP package", "tags": ["Compliance"] }
+    },
+    "/xapi/statements": {
+      "get": { "summary": "List xAPI statements", "tags": ["xAPI"] }
+    },
+    "/xapi/stats": {
+      "get": { "summary": "xAPI verb statistics", "tags": ["xAPI"] }
+    },
+    "/integrations/api-keys": {
+      "get": { "summary": "List API keys", "tags": ["Integrations"] },
+      "post": { "summary": "Create API key", "tags": ["Integrations"] }
+    },
+    "/integrations/webhooks": {
+      "get": { "summary": "List webhooks", "tags": ["Integrations"] },
+      "post": { "summary": "Create webhook", "tags": ["Integrations"] }
+    },
+    "/bi/reports/{type}": {
+      "get": {
+        "summary": "BI report export (API key auth)",
+        "tags": ["BI"],
+        "security": [{ "ApiKeyAuth": [] }]
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      },
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Api-Key"
+      }
+    }
+  },
+  "security": [{ "BearerAuth": [] }]
+}
