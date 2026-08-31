@@ -88,7 +88,7 @@ export default function LearnCoursePage({ params }: { params: Promise<{ courseId
   const hasFinalAssessment = assessments?.some((a) => a.kind === "FINAL");
   const { data: preAttempts } = useAssessmentAttempts(preAssessment?.id);
   const preRequired = Boolean(course?.requirePreAssessment && preAssessment);
-  const prePassed = !preRequired || preAttempts?.some((attempt) => attempt.passed);
+  const prePassed = !preRequired || Boolean(preAttempts?.some((attempt) => attempt.passed));
   const completedLessonIds = completedLessonIdsFromProgress(enrollment?.progress);
   const progressMap = new Map(enrollment?.progress?.map((p) => [p.lessonId, p]) ?? []);
 

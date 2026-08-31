@@ -10,7 +10,7 @@ if (env.SENTRY_DSN) {
   });
 }
 
-const server = app.listen(env.PORT, () => {
+const server = app.listen(env.PORT, '0.0.0.0', () => {
   logger.info({ port: env.PORT }, 'api_listening');
 });
 
