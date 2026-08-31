@@ -9,7 +9,14 @@ RUN npm ci && npm ci --prefix backend
 
 COPY backend ./backend/
 
-RUN npx prisma generate && npm run build --prefix backend
+# Prisma writes the client next to the schema (/app/node_modules). Backend tsc
+# resolves @prisma/client from backend/node_modules, which is still the empty stub
+# from npm ci --prefix backend. Copy the generated client in before compile.
+RUN npx prisma generate \
+  && rm -rf backend/node_modules/@prisma/client backend/node_modules/.prisma \
+  && cp -a node_modules/@prisma/client backend/node_modules/@prisma/client \
+  && cp -a node_modules/.prisma backend/node_modules/.prisma \
+  && npm run build --prefix backend
 
 FROM node:22-alpine AS runner
 WORKDIR /app
