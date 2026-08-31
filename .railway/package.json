@@ -1,0 +1,9 @@
+{
+  "name": "talenthub-railway",
+  "private": true,
+  "type": "module",
+  "description": "Railway Infrastructure as Code SDK for Zynext TalentHub",
+  "dependencies": {
+    "railway": "^3.11.0"
+  }
+}

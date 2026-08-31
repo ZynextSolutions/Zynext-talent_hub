@@ -48,3 +48,6 @@ postgres_data/
 # Local certificate / org uploads
 backend/uploads/
 uploads/
+
+#Cursor 
+.cursor/

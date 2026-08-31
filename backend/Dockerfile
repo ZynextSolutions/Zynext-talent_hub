@@ -24,4 +24,4 @@ COPY --from=builder /app/backend/node_modules ./backend/node_modules
 COPY --from=builder /app/backend/dist ./backend/dist
 
 EXPOSE 4000
-CMD ["node", "backend/dist/index.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node backend/dist/index.js"]
