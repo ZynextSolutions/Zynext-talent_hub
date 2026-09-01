@@ -4,6 +4,7 @@ import {
   forwardRequestHeaders,
   forwardResponseHeaders,
   proxyUpstreamFetch,
+  requestClientIp,
 } from "@/lib/api-proxy";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +15,7 @@ type RouteContext = { params: Promise<{ path: string[] }> };
 async function proxy(req: NextRequest, context: RouteContext): Promise<NextResponse> {
   const { path } = await context.params;
   const url = buildProxyUrl(path, req.nextUrl.search);
-  const headers = forwardRequestHeaders(req.headers);
+  const headers = forwardRequestHeaders(req.headers, requestClientIp(req.headers));
 
   const init: RequestInit & { duplex?: "half" } = {
     method: req.method,

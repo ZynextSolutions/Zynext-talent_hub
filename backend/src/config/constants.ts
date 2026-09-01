@@ -17,11 +17,12 @@ export const MFA_LOGIN_TTL_MS = 5 * 60 * 1000;
 /** LoginLockout.organizationId is not an FK; used as the platform-admin lockout key. */
 export const PLATFORM_LOCKOUT_ORG_ID = 'platform';
 export const AUTH_RATE_WINDOW_MS = 15 * 60 * 1000;
-export const AUTH_RATE_MAX = 5;
-export const REFRESH_RATE_MAX = 30;
-export const GLOBAL_RATE_MAX_PROD = 300;
-export const GLOBAL_RATE_MAX_DEV = 2000;
-export const AUTHENTICATED_RATE_MAX = 600;
+/** Per client IP. Kept moderate — web proxies must forward X-Forwarded-For. */
+export const AUTH_RATE_MAX = 40;
+export const REFRESH_RATE_MAX = 120;
+export const GLOBAL_RATE_MAX_PROD = 2000;
+export const GLOBAL_RATE_MAX_DEV = 5000;
+export const AUTHENTICATED_RATE_MAX = 1200;
 export const CERT_VERIFY_RATE_MAX = 30;
 export const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 export const RESET_TTL_MS = 60 * 60 * 1000;

@@ -93,14 +93,35 @@ export function buildProxyUrl(pathSegments: string[], search: string): string {
   return `${apiProxyTarget()}/api/v1/${suffix}${search}`;
 }
 
-export function forwardRequestHeaders(headers: Headers): Headers {
+export function forwardRequestHeaders(
+  headers: Headers,
+  clientIp?: string | null,
+): Headers {
   const out = new Headers();
   headers.forEach((value, key) => {
     if (!HOP_BY_HOP.has(key.toLowerCase())) {
       out.set(key, value);
     }
   });
+  // Browser → web → api: without this, every user shares the web container IP and
+  // trips auth/global rate limits (5 logins / 15 min for the whole tenant).
+  if (clientIp) {
+    const prior = out.get("x-forwarded-for");
+    out.set("x-forwarded-for", prior ? `${clientIp}, ${prior}` : clientIp);
+    out.set("x-real-ip", clientIp);
+  }
   return out;
+}
+
+/** Best-effort client IP from the incoming Next request (Railway / CDN aware). */
+export function requestClientIp(headers: Headers): string | null {
+  const forwarded = headers.get("x-forwarded-for");
+  if (forwarded) {
+    const first = forwarded.split(",")[0]?.trim();
+    if (first) return first;
+  }
+  const real = headers.get("x-real-ip")?.trim();
+  return real || null;
 }
 
 export function forwardResponseHeaders(headers: Headers): Headers {
