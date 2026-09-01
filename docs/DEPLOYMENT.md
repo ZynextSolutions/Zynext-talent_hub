@@ -96,18 +96,32 @@ Runs migrate via `boot.cjs` on api start (same as Railway).
 
 Public registration is off in production (`ALLOW_PUBLIC_ORG_REGISTER=false`).
 
+**Platform admin only** (recommended for production — no demo orgs/courses):
+
 ```bash
 # One-time against production DATABASE_URL
+$env:DATABASE_URL="<Railway Postgres URL>"
+$env:PLATFORM_ADMIN_EMAIL="you@yourcompany.com"
+$env:PLATFORM_ADMIN_PASSWORD="<strong password, min 12 chars>"
+npm run db:seed:platform
+```
+
+Creates one row in `platform_admins`. Sign in at `/platform/login`, then create tenants from the platform console.
+
+**Full demo seed** (Acme/Globex orgs, courses, users — local/pilot only):
+
+```bash
 npm run db:seed
 ```
 
-Demo credentials are in root `README.md` — change passwords before go-live.
+Demo credentials are in root `README.md` — do not use demo passwords for real customers.
 
 ## Troubleshooting
 
 | Symptom | Action |
 |---------|--------|
-| P3009 failed migration | Reset Postgres (above) and redeploy |
+| P3009 failed migration | Full reset: [scripts/railway-db-reset.sql](../scripts/railway-db-reset.sql), then redeploy once |
+| P3018 syntax error near `\ufeff` | Migration file had UTF-8 BOM — fixed in repo; pull latest and reset DB |
 | API exits on boot | Check secrets; read `[boot]` log lines |
 | `/ready` timeout | Deploy logs — migration or DB connection |
 | Web login fails | Verify `API_PROXY_TARGET` on **web** |
