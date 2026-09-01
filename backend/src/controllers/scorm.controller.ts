@@ -11,7 +11,7 @@ import { isRoleName } from '../domain/roles';
 import type { AuthPrincipal } from '../types/auth';
 import { requestAccessToken } from '../lib/request-access-token';
 import { parseCookieHeader } from '../lib/cookies';
-import { verifyScormTicket } from '../lib/scorm-ticket';
+import { verifyScormTicket, signScormTicket } from '../lib/scorm-ticket';
 import { env } from '../config/env';
 
 function scormTicketFromRequest(req: Request): string | undefined {
@@ -68,6 +68,20 @@ function setScormCookie(res: Response, pathValue: string, ticket: string) {
     path: pathValue,
     maxAge: env.JWT_ACCESS_TTL_SEC * 1000,
   });
+}
+
+function setScormAssetCacheHeaders(res: Response, relativePath: string) {
+  const ext = path.extname(relativePath).toLowerCase();
+  // Package files are immutable until re-upload; private so tickets stay session-scoped.
+  if (['.js', '.css', '.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.woff', '.woff2', '.ttf', '.mp3', '.mp4', '.json', '.xml'].includes(ext)) {
+    res.setHeader('Cache-Control', 'private, max-age=86400, immutable');
+    return;
+  }
+  if (['.html', '.htm'].includes(ext)) {
+    res.setHeader('Cache-Control', 'private, max-age=60');
+    return;
+  }
+  res.setHeader('Cache-Control', 'private, max-age=300');
 }
 
 export const scormController = {
@@ -127,26 +141,43 @@ export const scormController = {
   player: asyncHandler(async (req, res) => {
     const { enrollmentId } = validatedParams<{ enrollmentId: string }>(req);
     const auth = await authFromRequest(req, { enrollmentId });
-    const launch = await scormService.getLaunch(auth.organizationId!, enrollmentId, auth);
-    const ticket = scormTicketFromRequest(req);
-    if (ticket) setScormCookie(res, scormService.scormContentCookiePath(enrollmentId), ticket);
+    const bundle = await scormService.getPlayerBundle(auth.organizationId!, enrollmentId, auth);
+    const ticket =
+      scormTicketFromRequest(req) ??
+      signScormTicket(
+        {
+          sub: auth.sub,
+          organizationId: auth.organizationId!,
+          enrollmentId,
+          courseId: bundle.courseId,
+        },
+        env.JWT_ACCESS_SECRET,
+        env.JWT_ACCESS_TTL_SEC,
+      );
+    setScormCookie(res, scormService.scormContentCookiePath(enrollmentId), ticket);
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.send(scormService.renderPlayerHtml(enrollmentId, launch.contentUrl));
+    res.setHeader('Cache-Control', 'no-store');
+    res.send(scormService.renderPlayerHtml(enrollmentId, bundle.contentUrl, bundle.state));
   }),
 
   content: asyncHandler(async (req, res) => {
     const { enrollmentId } = validatedParams<{ enrollmentId: string }>(req);
-    const auth = await authFromRequest(req, { enrollmentId });
-    const suffix = req.params[0] ?? '';
     const ticket = scormTicketFromRequest(req);
-    if (ticket) setScormCookie(res, scormService.scormContentCookiePath(enrollmentId), ticket);
-    const served = await scormService.serveContentFile(
-      auth.organizationId!,
-      enrollmentId,
-      auth,
+    if (!ticket) throw AppError.from('AUTH_MISSING_TOKEN');
+    const claims = verifyScormTicket(ticket, env.JWT_ACCESS_SECRET, { enrollmentId });
+    let courseId = claims.courseId;
+    if (!courseId) {
+      courseId = await scormService.resolveCourseIdForEnrollment(claims.organizationId, enrollmentId);
+    }
+    setScormCookie(res, scormService.scormContentCookiePath(enrollmentId), ticket);
+    const suffix = req.params[0] ?? '';
+    const served = await scormService.serveStaticPackageFile(
+      claims.organizationId,
+      courseId,
       suffix,
     );
     if (served.contentType) res.setHeader('Content-Type', served.contentType);
+    setScormAssetCacheHeaders(res, suffix);
     res.sendFile(path.resolve(served.filePath));
   }),
 
@@ -164,25 +195,37 @@ export const scormController = {
     const { courseId } = validatedParams<{ courseId: string }>(req);
     const auth = await authFromRequest(req, { courseId });
     const launch = await scormService.getPreviewLaunch(auth.organizationId!, courseId, auth);
-    const ticket = scormTicketFromRequest(req);
-    if (ticket) setScormCookie(res, scormService.scormPreviewContentCookiePath(courseId), ticket);
+    const ticket =
+      scormTicketFromRequest(req) ??
+      signScormTicket(
+        {
+          sub: auth.sub,
+          organizationId: auth.organizationId!,
+          courseId,
+        },
+        env.JWT_ACCESS_SECRET,
+        env.JWT_ACCESS_TTL_SEC,
+      );
+    setScormCookie(res, scormService.scormPreviewContentCookiePath(courseId), ticket);
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-store');
     res.send(scormService.renderPreviewPlayerHtml(courseId, launch.contentUrl));
   }),
 
   previewContent: asyncHandler(async (req, res) => {
     const { courseId } = validatedParams<{ courseId: string }>(req);
-    const auth = await authFromRequest(req, { courseId });
-    const suffix = req.params[0] ?? '';
     const ticket = scormTicketFromRequest(req);
-    if (ticket) setScormCookie(res, scormService.scormPreviewContentCookiePath(courseId), ticket);
-    const served = await scormService.servePreviewContentFile(
-      auth.organizationId!,
+    if (!ticket) throw AppError.from('AUTH_MISSING_TOKEN');
+    const claims = verifyScormTicket(ticket, env.JWT_ACCESS_SECRET, { courseId });
+    setScormCookie(res, scormService.scormPreviewContentCookiePath(courseId), ticket);
+    const suffix = req.params[0] ?? '';
+    const served = await scormService.serveStaticPackageFile(
+      claims.organizationId,
       courseId,
-      auth,
       suffix,
     );
     if (served.contentType) res.setHeader('Content-Type', served.contentType);
+    setScormAssetCacheHeaders(res, suffix);
     res.sendFile(path.resolve(served.filePath));
   }),
 };

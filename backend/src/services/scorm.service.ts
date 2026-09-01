@@ -156,6 +156,7 @@ class ScormService {
         sub: actor.sub,
         organizationId,
         enrollmentId,
+        courseId: enrollment.courseId,
       },
       env.JWT_ACCESS_SECRET,
       env.JWT_ACCESS_TTL_SEC,
@@ -248,12 +249,12 @@ class ScormService {
     });
   }
 
-  renderPlayerHtml(enrollmentId: string, contentPath: string): string {
+  renderPlayerHtml(enrollmentId: string, contentPath: string, initialState?: CmiState): string {
     const launchRelative = scormLaunchRelativePath(contentPath);
     const contentUrl = `/api/v1/learn/scorm/${enrollmentId}/content/${launchRelative}`;
-    const stateUrl = `/api/v1/learn/scorm/${enrollmentId}/state`;
     const commitUrl = `/api/v1/learn/scorm/${enrollmentId}/commit`;
     const finishUrl = `/api/v1/learn/scorm/${enrollmentId}/finish`;
+    const bootState = initialState ?? defaultCmiState();
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -271,22 +272,13 @@ class ScormService {
   <div id="status">Loading SCORM content…</div>
   <iframe id="sco" title="SCORM content" hidden sandbox="allow-scripts allow-forms allow-popups allow-downloads"></iframe>
   <script>
-    const stateUrl = ${JSON.stringify(stateUrl)};
     const commitUrl = ${JSON.stringify(commitUrl)};
     const finishUrl = ${JSON.stringify(finishUrl)};
     const contentUrl = ${JSON.stringify(contentUrl)};
 
-    let cache = {};
+    let cache = ${JSON.stringify(bootState)};
     let initialized = false;
     let finished = false;
-
-    async function loadState() {
-      const res = await fetch(stateUrl, {
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error('Failed to load SCORM state');
-      cache = await res.json();
-    }
 
     async function persist(values, url) {
       await fetch(url, {
@@ -334,16 +326,10 @@ class ScormService {
 
     window.API = API;
 
-    loadState()
-      .then(function () {
-        document.getElementById('status').style.display = 'none';
-        const frame = document.getElementById('sco');
-        frame.hidden = false;
-        frame.src = contentUrl;
-      })
-      .catch(function (err) {
-        document.getElementById('status').textContent = err.message || 'Failed to load SCORM content.';
-      });
+    document.getElementById('status').style.display = 'none';
+    const frame = document.getElementById('sco');
+    frame.hidden = false;
+    frame.src = contentUrl;
   </script>
 </body>
 </html>`;
@@ -404,18 +390,35 @@ class ScormService {
 </html>`;
   }
 
-  async servePreviewContentFile(
+  async getPlayerBundle(organizationId: string, enrollmentId: string, actor: AuthPrincipal) {
+    const enrollment = await this.assertEnrollmentAccess(organizationId, enrollmentId, actor, 'read');
+    const course = await courseRepository.getById(organizationId, enrollment.courseId);
+    if (!course?.scormPackageUrl) {
+      throw AppError.from('VALIDATION_ERROR', 'This course has no SCORM package.');
+    }
+    return {
+      contentUrl: course.scormPackageUrl,
+      scormVersion: course.scormVersion ?? '1.2',
+      state: enrollmentToCmi(enrollment),
+      courseId: enrollment.courseId,
+    };
+  }
+
+  async resolveCourseIdForEnrollment(organizationId: string, enrollmentId: string): Promise<string> {
+    const enrollment = await enrollmentRepository.getById(organizationId, enrollmentId);
+    if (!enrollment) throw AppError.from('NOT_FOUND');
+    return enrollment.courseId;
+  }
+
+  /**
+   * Serve extracted package files after ticket verification only.
+   * Full enrollment/prereq checks happen on launch/player — not per asset.
+   */
+  async serveStaticPackageFile(
     organizationId: string,
     courseId: string,
-    actor: AuthPrincipal,
     relativePath: string,
   ): Promise<{ filePath: string; contentType: string | null }> {
-    await courseService.assertCanWrite(organizationId, courseId, actor);
-    const course = await courseRepository.getById(organizationId, courseId);
-    if (!course?.scormPackageUrl) {
-      throw AppError.from('NOT_FOUND', 'This course has no SCORM package.');
-    }
-
     const normalized = relativePath.replace(/\\/g, '/').replace(/^\/+/, '');
     if (!normalized || normalized.includes('..')) {
       throw AppError.from('NOT_FOUND');
@@ -431,6 +434,16 @@ class ScormService {
     return { filePath: abs, contentType: contentTypeForPath(normalized) };
   }
 
+  async servePreviewContentFile(
+    organizationId: string,
+    courseId: string,
+    actor: AuthPrincipal,
+    relativePath: string,
+  ): Promise<{ filePath: string; contentType: string | null }> {
+    await courseService.assertCanWrite(organizationId, courseId, actor);
+    return this.serveStaticPackageFile(organizationId, courseId, relativePath);
+  }
+
   async serveContentFile(
     organizationId: string,
     enrollmentId: string,
@@ -438,24 +451,7 @@ class ScormService {
     relativePath: string,
   ): Promise<{ filePath: string; contentType: string | null }> {
     const enrollment = await this.assertEnrollmentAccess(organizationId, enrollmentId, actor, 'read');
-    const course = await courseRepository.getById(organizationId, enrollment.courseId);
-    if (!course?.scormPackageUrl) {
-      throw AppError.from('NOT_FOUND', 'This course has no SCORM package.');
-    }
-
-    const normalized = relativePath.replace(/\\/g, '/').replace(/^\/+/, '');
-    if (!normalized || normalized.includes('..')) {
-      throw AppError.from('NOT_FOUND');
-    }
-
-    const packagePrefix = `/uploads/scorm/${organizationId}/${enrollment.courseId}/`;
-    const uploadPath = `${packagePrefix}${normalized}`;
-    const abs = resolveUploadFilePath(uploadPath, uploadsRoot());
-    if (!abs || !fs.existsSync(abs) || fs.statSync(abs).isDirectory()) {
-      throw AppError.from('NOT_FOUND');
-    }
-
-    return { filePath: abs, contentType: contentTypeForPath(normalized) };
+    return this.serveStaticPackageFile(organizationId, enrollment.courseId, relativePath);
   }
 
   private async assertEnrollmentAccess(

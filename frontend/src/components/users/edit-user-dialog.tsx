@@ -34,14 +34,21 @@ interface EditUserDialogProps {
   user: User;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** When set (platform console), API calls are scoped to this tenant. */
+  organizationId?: string;
 }
 
-export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps) {
-  const { user: actor } = useAuth();
+export function EditUserDialog({
+  user,
+  open,
+  onOpenChange,
+  organizationId,
+}: EditUserDialogProps) {
+  const { user: actor, isPlatformAdmin } = useAuth();
   const updateUser = useUpdateUser();
-  const roles = assignableRoles(actor?.role);
+  const roles = assignableRoles(isPlatformAdmin ? "SUPER_ADMIN" : actor?.role);
   const canChangeRole = roles.length > 1;
-  const { data: orgTree } = useOrgTree(false);
+  const { data: orgTree } = useOrgTree(false, organizationId);
   const teams = useMemo(
     () => (orgTree ? flattenAssignTargets(orgTree).filter((t) => t.type === "TEAM") : []),
     [orgTree],
@@ -67,6 +74,7 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
     try {
       await updateUser.mutateAsync({
         id: user.id,
+        organizationId,
         firstName,
         lastName,
         role,

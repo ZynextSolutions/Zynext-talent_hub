@@ -34,17 +34,18 @@ import { LessonActivity } from "@/components/courses/lesson-activity";
 import { CourseForumPanel } from "@/components/forums/course-forum-panel";
 import { useCourseAssessments, useAssessmentAttempts } from "@/hooks/useAssessments";
 import { courseOutline, formatLessonDuration, lessonKind } from "@/lib/course-outline";
-import {
-  completedLessonIdsFromProgress,
-  isLessonUnlocked,
-} from "@/lib/lesson-prerequisites";
+import { isLessonUnlocked } from "@/lib/lesson-prerequisites";
 import {
   completionRuleSummary,
   isLessonRequired,
   lessonsMeetCompletionRule,
 } from "@/lib/completion";
 import { Badge } from "@/components/ui/badge";
-import { learnerCanMarkComplete } from "@/lib/learner-completion";
+import {
+  isExternalVideoUrl,
+  learnerCompletionCheck,
+} from "@/lib/learner-completion";
+import type { LessonProgress } from "@/types";
 
 export default function LearnCoursePage({ params }: { params: Promise<{ courseId: string }> }) {
   const { courseId } = use(params);
@@ -81,6 +82,8 @@ export default function LearnCoursePage({ params }: { params: Promise<{ courseId
   const [activeLessonId, setActiveLessonId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"pre" | "lessons" | "quiz" | "forum" | "survey">("lessons");
   const [activeSurveyId, setActiveSurveyId] = useState<string | null>(null);
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  const [localProgress, setLocalProgress] = useState<Record<string, Partial<LessonProgress>>>({});
   const { data: assessments } = useCourseAssessments(courseId);
   const preAssessment = assessments?.find((a) => a.kind === "PRE");
   const surveys = assessments?.filter((a) => a.kind === "SURVEY") ?? [];
@@ -89,8 +92,38 @@ export default function LearnCoursePage({ params }: { params: Promise<{ courseId
   const { data: preAttempts } = useAssessmentAttempts(preAssessment?.id);
   const preRequired = Boolean(course?.requirePreAssessment && preAssessment);
   const prePassed = !preRequired || Boolean(preAttempts?.some((attempt) => attempt.passed));
-  const completedLessonIds = completedLessonIdsFromProgress(enrollment?.progress);
-  const progressMap = new Map(enrollment?.progress?.map((p) => [p.lessonId, p]) ?? []);
+
+  const progressMap = useMemo(() => {
+    const map = new Map<string, LessonProgress>();
+    for (const row of enrollment?.progress ?? []) {
+      map.set(row.lessonId, { ...row, ...localProgress[row.lessonId] });
+    }
+    for (const [lessonId, patch] of Object.entries(localProgress)) {
+      if (!map.has(lessonId)) {
+        map.set(lessonId, {
+          lessonId,
+          completed: Boolean(patch.completed),
+          positionSeconds: patch.positionSeconds ?? 0,
+          watchedSeconds: patch.watchedSeconds ?? 0,
+          openedAt: patch.openedAt ?? null,
+          ...patch,
+        });
+      }
+    }
+    return map;
+  }, [enrollment?.progress, localProgress]);
+
+  const completedLessonIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const [lessonId, row] of progressMap) {
+      if (row.completed) ids.add(lessonId);
+    }
+    return ids;
+  }, [progressMap]);
+
+  useEffect(() => {
+    setLocalProgress({});
+  }, [enrollmentId]);
 
   useEffect(() => {
     if (!lessons.length || activeLessonId || enrollment === undefined) return;
@@ -109,19 +142,29 @@ export default function LearnCoursePage({ params }: { params: Promise<{ courseId
 
     const firstIncomplete = lessons.find(
       (lesson) =>
-        !enrollment?.progress?.find((entry) => entry.lessonId === lesson.id)?.completed &&
+        !progressMap.get(lesson.id)?.completed &&
         isLessonUnlocked(lesson, completedLessonIds),
     );
     const fallback = lessons.find((lesson) => isLessonUnlocked(lesson, completedLessonIds));
     const chosen = firstIncomplete?.id ?? fallback?.id ?? lessons[0].id;
     setActiveLessonId(chosen);
     if (enrollmentId && chosen) {
-      const progress = enrollment?.progress?.find((entry) => entry.lessonId === chosen);
-      void api.put(`/enrollments/${enrollmentId}/progress/lessons/${chosen}`, {
-        positionSeconds: progress?.positionSeconds ?? 0,
-      });
+      const progress = progressMap.get(chosen);
+      void api
+        .put<{ lessonProgress: LessonProgress }>(
+          `/enrollments/${enrollmentId}/progress/lessons/${chosen}`,
+          { positionSeconds: progress?.positionSeconds ?? 0 },
+        )
+        .then((data) => {
+          if (data?.lessonProgress) {
+            setLocalProgress((prev) => ({
+              ...prev,
+              [chosen]: { ...prev[chosen], ...data.lessonProgress },
+            }));
+          }
+        });
     }
-  }, [lessons, enrollment, enrollmentId, activeLessonId, completedLessonIds, preRequired, prePassed]);
+  }, [lessons, enrollment, enrollmentId, activeLessonId, completedLessonIds, preRequired, prePassed, progressMap]);
 
   useEffect(() => {
     if (preRequired && !prePassed && viewMode === "lessons") {
@@ -137,22 +180,47 @@ export default function LearnCoursePage({ params }: { params: Promise<{ courseId
 
   const completeLesson = useMutation({
     mutationFn: (lessonId: string) =>
-      api.post(`/enrollments/${enrollmentId}/progress/lessons/${lessonId}/complete`),
-    onSuccess: () => {
+      api.post<{
+        lessonProgress: LessonProgress;
+        enrollment: { progressPercent: number; status: string };
+      }>(`/enrollments/${enrollmentId}/progress/lessons/${lessonId}/complete`),
+    onSuccess: (data, lessonId) => {
+      setLocalProgress((prev) => ({
+        ...prev,
+        [lessonId]: {
+          ...prev[lessonId],
+          ...data.lessonProgress,
+          completed: true,
+        },
+      }));
       queryClient.invalidateQueries({ queryKey: ["enrollments"] });
       toast.success("Lesson completed");
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Could not complete lesson");
     },
   });
 
   const positionTimer = useRef<number | undefined>(undefined);
 
+  function patchLocalProgress(lessonId: string, patch: Partial<LessonProgress>) {
+    setLocalProgress((prev) => ({
+      ...prev,
+      [lessonId]: { ...prev[lessonId], ...patch },
+    }));
+  }
+
   function recordLessonVisit(lessonId: string) {
     if (!enrollmentId) return;
     const seconds = progressMap.get(lessonId)?.positionSeconds ?? 0;
-    void api.put(`/enrollments/${enrollmentId}/progress/lessons/${lessonId}`, {
-      positionSeconds: seconds,
-    });
-    queryClient.invalidateQueries({ queryKey: ["enrollments"] });
+    void api
+      .put<{ lessonProgress: LessonProgress }>(
+        `/enrollments/${enrollmentId}/progress/lessons/${lessonId}`,
+        { positionSeconds: seconds },
+      )
+      .then((data) => {
+        if (data?.lessonProgress) patchLocalProgress(lessonId, data.lessonProgress);
+      });
   }
 
   function selectLesson(lessonId: string) {
@@ -173,12 +241,21 @@ export default function LearnCoursePage({ params }: { params: Promise<{ courseId
 
   function savePosition(lessonId: string, seconds: number) {
     if (!enrollmentId) return;
+    patchLocalProgress(lessonId, {
+      positionSeconds: seconds,
+      watchedSeconds: Math.max(progressMap.get(lessonId)?.watchedSeconds ?? 0, seconds),
+    });
     window.clearTimeout(positionTimer.current);
     positionTimer.current = window.setTimeout(() => {
-      void api.put(`/enrollments/${enrollmentId}/progress/lessons/${lessonId}`, {
-        positionSeconds: seconds,
-      });
-    }, 3000);
+      void api
+        .put<{ lessonProgress: LessonProgress }>(
+          `/enrollments/${enrollmentId}/progress/lessons/${lessonId}`,
+          { positionSeconds: seconds },
+        )
+        .then((data) => {
+          if (data?.lessonProgress) patchLocalProgress(lessonId, data.lessonProgress);
+        });
+    }, 1500);
   }
 
   const activeLesson = lessons.find((l) => l.id === activeLessonId);
@@ -187,10 +264,36 @@ export default function LearnCoursePage({ params }: { params: Promise<{ courseId
   const scormManaged = activeKind === "SCORM";
   const iltManaged = activeKind === "ILT" || activeKind === "VILT";
   const quizManaged = activeKind === "QUIZ";
-  const canCompleteActive = learnerCanMarkComplete(
-    activeLesson,
-    progressMap.get(activeLesson?.id ?? ""),
+  const effectiveVideoUrl = activeLesson?.videoUrl || course?.videoUrl || null;
+  const activeProgress = progressMap.get(activeLesson?.id ?? "");
+  const completionCheck = learnerCompletionCheck(
+    activeLesson
+      ? { ...activeLesson, kind: activeKind ?? activeLesson.kind, videoUrl: effectiveVideoUrl }
+      : undefined,
+    activeProgress,
+    nowMs,
   );
+  const canCompleteActive = completionCheck.ok;
+
+  useEffect(() => {
+    if (
+      !activeLesson ||
+      activeKind !== "VIDEO" ||
+      !isExternalVideoUrl(effectiveVideoUrl) ||
+      completionCheck.ok ||
+      activeProgress?.completed
+    ) {
+      return;
+    }
+    const timer = window.setInterval(() => setNowMs(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [
+    activeLesson,
+    activeKind,
+    effectiveVideoUrl,
+    completionCheck.ok,
+    activeProgress?.completed,
+  ]);
 
   const isLoading = authLoading || courseLoading || enrollLoading || detailLoading;
 
@@ -412,67 +515,88 @@ export default function LearnCoursePage({ params }: { params: Promise<{ courseId
 
               <Separator />
 
-              <div className="flex items-center justify-between gap-4 pb-8">
-                <Button
-                  variant="outline"
-                  disabled={activeIndex <= 0}
-                  onClick={() => {
-                    const prevId = lessons[activeIndex - 1]?.id;
-                    if (prevId) selectLesson(prevId);
-                  }}
-                >
-                  <ChevronLeft className="mr-1 h-4 w-4" />
-                  Previous
-                </Button>
+              <div className="flex flex-col gap-2 pb-8">
+                <div className="flex items-center justify-between gap-4">
+                  <Button
+                    variant="outline"
+                    disabled={activeIndex <= 0}
+                    onClick={() => {
+                      const prevId = lessons[activeIndex - 1]?.id;
+                      if (prevId) selectLesson(prevId);
+                    }}
+                  >
+                    <ChevronLeft className="mr-1 h-4 w-4" />
+                    Previous
+                  </Button>
 
-                <Button
-                  onClick={() => {
-                    if (enrollmentId && activeLesson && !scormManaged && !iltManaged && !quizManaged) {
-                      completeLesson.mutate(activeLesson.id, {
-                        onSuccess: () => {
-                          if (activeIndex < lessons.length - 1) {
-                            selectLesson(lessons[activeIndex + 1].id);
-                          } else if (hasFinalAssessment) {
-                            setViewMode("quiz");
-                          }
-                        },
-                      });
-                      return;
+                  <Button
+                    onClick={() => {
+                      if (enrollmentId && activeLesson && !scormManaged && !iltManaged && !quizManaged) {
+                        completeLesson.mutate(activeLesson.id, {
+                          onSuccess: () => {
+                            if (activeIndex < lessons.length - 1) {
+                              selectLesson(lessons[activeIndex + 1].id);
+                            } else if (hasFinalAssessment) {
+                              setViewMode("quiz");
+                            }
+                          },
+                        });
+                        return;
+                      }
+                      if (activeIndex < lessons.length - 1) {
+                        selectLesson(lessons[activeIndex + 1].id);
+                      } else if (hasFinalAssessment) {
+                        setViewMode("quiz");
+                      }
+                    }}
+                    disabled={
+                      completeLesson.isPending ||
+                      Boolean(
+                        enrollmentId &&
+                          !scormManaged &&
+                          !iltManaged &&
+                          !quizManaged &&
+                          !canCompleteActive,
+                      )
                     }
-                    if (activeIndex < lessons.length - 1) {
-                      selectLesson(lessons[activeIndex + 1].id);
-                    } else if (hasFinalAssessment) {
-                      setViewMode("quiz");
-                    }
-                  }}
-                  disabled={completeLesson.isPending || Boolean(enrollmentId && !scormManaged && !iltManaged && !quizManaged && !canCompleteActive)}
-                >
-                  {!enrollmentId || scormManaged || iltManaged || quizManaged ? (
-                    activeIndex < lessons.length - 1 ? (
+                  >
+                    {!enrollmentId || scormManaged || iltManaged || quizManaged ? (
+                      activeIndex < lessons.length - 1 ? (
+                        <>
+                          Next
+                          <ChevronRight className="ml-1 h-4 w-4" />
+                        </>
+                      ) : (
+                        "Finish preview"
+                      )
+                    ) : activeIndex < lessons.length - 1 ? (
                       <>
-                        Next
+                        Complete & next
                         <ChevronRight className="ml-1 h-4 w-4" />
                       </>
+                    ) : hasFinalAssessment ? (
+                      <>
+                        <CheckCircle2 className="mr-1 h-4 w-4" />
+                        Take assessment
+                      </>
                     ) : (
-                      "Finish preview"
-                    )
-                  ) : activeIndex < lessons.length - 1 ? (
-                    <>
-                      Complete & next
-                      <ChevronRight className="ml-1 h-4 w-4" />
-                    </>
-                  ) : hasFinalAssessment ? (
-                    <>
-                      <CheckCircle2 className="mr-1 h-4 w-4" />
-                      Take assessment
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="mr-1 h-4 w-4" />
-                      Complete course
-                    </>
-                  )}
-                </Button>
+                      <>
+                        <CheckCircle2 className="mr-1 h-4 w-4" />
+                        Complete course
+                      </>
+                    )}
+                  </Button>
+                </div>
+                {enrollmentId &&
+                !scormManaged &&
+                !iltManaged &&
+                !quizManaged &&
+                !canCompleteActive &&
+                completionCheck.reason ? (
+                  <p className="text-muted-foreground text-center text-xs sm:text-right">
+                    {completionCheck.reason}
+                  </p>
+                ) : null}
               </div>
             </div>
           ) : (

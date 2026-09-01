@@ -19,6 +19,14 @@ export function usePlatformOrganizations(params?: { page?: number; pageSize?: nu
   });
 }
 
+export function usePlatformOrganization(id: string | null) {
+  return useQuery({
+    queryKey: ["platform", "organizations", id],
+    queryFn: () => api.get<PlatformOrganization>(`/platform/organizations/${id}`),
+    enabled: Boolean(id),
+  });
+}
+
 export function usePlatformAuditLogs(params?: { page?: number; organizationId?: string }) {
   const search = new URLSearchParams();
   if (params?.page) search.set("page", String(params.page));
@@ -59,10 +67,17 @@ export function useCreatePlatformOrganization() {
 export function usePatchPlatformOrganization() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...body }: { id: string; name?: string; status?: "ACTIVE" | "SUSPENDED" }) =>
-      api.patch<PlatformOrganization>(`/platform/organizations/${id}`, body),
-    onSuccess: () => {
+    mutationFn: ({
+      id,
+      ...body
+    }: {
+      id: string;
+      name?: string;
+      status?: "ACTIVE" | "SUSPENDED";
+    }) => api.patch<PlatformOrganization>(`/platform/organizations/${id}`, body),
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["platform", "organizations"] });
+      queryClient.invalidateQueries({ queryKey: ["platform", "organizations", variables.id] });
       toast.success("Organization updated");
     },
     onError: () => toast.error("Failed to update organization"),

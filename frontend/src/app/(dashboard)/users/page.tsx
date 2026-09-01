@@ -331,30 +331,30 @@ export default function UsersPage() {
                                 Edit user
                               </DropdownMenuItem>
                               {user.status === "INVITED" && (
-                                <DropdownMenuItem onClick={() => resendInvite.mutate(user.id)}>
+                                <DropdownMenuItem onClick={() => resendInvite.mutate({ id: user.id })}>
                                   Resend invite
                                 </DropdownMenuItem>
                               )}
                               {user.status === "SUSPENDED" && (
-                                <DropdownMenuItem onClick={() => activateUser.mutate(user.id)}>
+                                <DropdownMenuItem onClick={() => activateUser.mutate({ id: user.id })}>
                                   Activate
                                 </DropdownMenuItem>
                               )}
                               {user.status === "ACTIVE" && (
                                 <DropdownMenuItem
                                   className="text-destructive focus:text-destructive"
-                                  onClick={() => suspendUser.mutate(user.id)}
+                                  onClick={() => suspendUser.mutate({ id: user.id })}
                                 >
                                   Suspend
                                 </DropdownMenuItem>
                               )}
-                              <DropdownMenuItem onClick={() => unlockUser.mutate(user.id)}>
+                              <DropdownMenuItem onClick={() => unlockUser.mutate({ id: user.id })}>
                                 Unlock account
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 className="text-destructive focus:text-destructive"
                                 onClick={() => {
-                                  if (confirm(`Delete ${user.email}?`)) deleteUser.mutate(user.id);
+                                  if (confirm(`Delete ${user.email}?`)) deleteUser.mutate({ id: user.id });
                                 }}
                               >
                                 Delete user

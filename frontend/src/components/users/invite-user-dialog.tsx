@@ -53,9 +53,14 @@ function flattenTeams(tree: OrgTree) {
   return options;
 }
 
-export function InviteUserDialog() {
-  const { user: actor, hasPermission } = useAuth();
-  const { data: orgTree, isLoading: treeLoading } = useOrgTree(false);
+interface InviteUserDialogProps {
+  /** When set (platform console), API calls are scoped to this tenant. */
+  organizationId?: string;
+}
+
+export function InviteUserDialog({ organizationId }: InviteUserDialogProps = {}) {
+  const { user: actor, isPlatformAdmin, hasPermission } = useAuth();
+  const { data: orgTree, isLoading: treeLoading } = useOrgTree(false, organizationId);
   const inviteUser = useInviteUser();
 
   const [open, setOpen] = useState(false);
@@ -67,7 +72,7 @@ export function InviteUserDialog() {
 
   const teams = useMemo(() => (orgTree ? flattenTeams(orgTree) : []), [orgTree]);
 
-  const availableRoles = assignableRoles(actor?.role);
+  const availableRoles = assignableRoles(isPlatformAdmin ? "SUPER_ADMIN" : actor?.role);
 
   function resetForm() {
     setEmail("");
@@ -84,7 +89,14 @@ export function InviteUserDialog() {
       return;
     }
     try {
-      await inviteUser.mutateAsync({ email, firstName, lastName, role, teamId });
+      await inviteUser.mutateAsync({
+        email,
+        firstName,
+        lastName,
+        role,
+        teamId,
+        organizationId,
+      });
       setOpen(false);
       resetForm();
     } catch (err) {
@@ -94,7 +106,7 @@ export function InviteUserDialog() {
     }
   }
 
-  if (!hasPermission("user:invite")) {
+  if (!isPlatformAdmin && !hasPermission("user:invite")) {
     return null;
   }
 

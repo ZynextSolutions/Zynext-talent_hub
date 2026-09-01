@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { api } from "@/lib/api-client";
+import { withTenantQuery } from "@/lib/tenant-query";
 import type { BulkUserStatusResult, Paginated, User, UserImportResult, UserRole, UserStatus } from "@/types";
 
 export interface UsersQueryParams {
@@ -11,6 +12,8 @@ export interface UsersQueryParams {
   q?: string;
   role?: UserRole;
   status?: UserStatus;
+  /** Required for platform-admin calls into a tenant. */
+  organizationId?: string;
 }
 
 export function useUsers(params?: UsersQueryParams) {
@@ -20,11 +23,12 @@ export function useUsers(params?: UsersQueryParams) {
   if (params?.q) search.set("q", params.q);
   if (params?.role) search.set("role", params.role);
   if (params?.status) search.set("status", params.status);
-  const qs = search.toString() ? `?${search.toString()}` : "";
+  const base = search.toString() ? `/users?${search.toString()}` : "/users";
 
   return useQuery({
     queryKey: ["users", params],
-    queryFn: () => api.get<Paginated<User>>(`/users${qs}`),
+    queryFn: () => api.get<Paginated<User>>(withTenantQuery(base, params?.organizationId)),
+    enabled: params?.organizationId !== undefined ? Boolean(params.organizationId) : true,
   });
 }
 
@@ -34,12 +38,14 @@ export interface InviteUserInput {
   lastName: string;
   role: UserRole;
   teamId: string;
+  organizationId?: string;
 }
 
 export function useInviteUser() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (body: InviteUserInput) => api.post<User>("/users", body),
+    mutationFn: ({ organizationId, ...body }: InviteUserInput) =>
+      api.post<User>(withTenantQuery("/users", organizationId), body),
     onSuccess: (user) => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
       toast.success(`Invite sent to ${user.email}`);
@@ -53,7 +59,8 @@ export function useInviteUser() {
 export function useSuspendUser() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.post<User>(`/users/${id}/suspend`),
+    mutationFn: ({ id, organizationId }: { id: string; organizationId?: string }) =>
+      api.post<User>(withTenantQuery(`/users/${id}/suspend`, organizationId)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
       toast.success("User suspended");
@@ -64,7 +71,8 @@ export function useSuspendUser() {
 
 export function useResendInvite() {
   return useMutation({
-    mutationFn: (id: string) => api.post<{ sent: boolean }>(`/users/${id}/resend-invite`),
+    mutationFn: ({ id, organizationId }: { id: string; organizationId?: string }) =>
+      api.post<{ sent: boolean }>(withTenantQuery(`/users/${id}/resend-invite`, organizationId)),
     onSuccess: () => toast.success("Invite resent"),
     onError: () => toast.error("Failed to resend invite"),
   });
@@ -73,7 +81,8 @@ export function useResendInvite() {
 export function useActivateUser() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.post<User>(`/users/${id}/activate`),
+    mutationFn: ({ id, organizationId }: { id: string; organizationId?: string }) =>
+      api.post<User>(withTenantQuery(`/users/${id}/activate`, organizationId)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
       toast.success("User activated");
@@ -87,15 +96,17 @@ export function useUpdateUser() {
   return useMutation({
     mutationFn: ({
       id,
+      organizationId,
       ...body
     }: {
       id: string;
+      organizationId?: string;
       firstName?: string;
       lastName?: string;
       role?: UserRole;
       teamId?: string;
       status?: UserStatus;
-    }) => api.patch<User>(`/users/${id}`, body),
+    }) => api.patch<User>(withTenantQuery(`/users/${id}`, organizationId), body),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
       toast.success("User updated");
@@ -107,7 +118,8 @@ export function useUpdateUser() {
 export function useDeleteUser() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.delete(`/users/${id}`),
+    mutationFn: ({ id, organizationId }: { id: string; organizationId?: string }) =>
+      api.delete(withTenantQuery(`/users/${id}`, organizationId)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
       toast.success("User deleted");
@@ -119,7 +131,8 @@ export function useDeleteUser() {
 export function useUnlockUser() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.post<User>(`/users/${id}/unlock`),
+    mutationFn: ({ id, organizationId }: { id: string; organizationId?: string }) =>
+      api.post<User>(withTenantQuery(`/users/${id}/unlock`, organizationId)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
       toast.success("User unlocked");
@@ -131,8 +144,14 @@ export function useUnlockUser() {
 export function useBulkUserStatus() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (body: { userIds: string[]; status: UserStatus }) =>
-      api.post<BulkUserStatusResult>("/users/bulk-status", body),
+    mutationFn: ({
+      organizationId,
+      ...body
+    }: {
+      userIds: string[];
+      status: UserStatus;
+      organizationId?: string;
+    }) => api.post<BulkUserStatusResult>(withTenantQuery("/users/bulk-status", organizationId), body),
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
       toast.success(`${result.updated} user(s) updated`);
@@ -141,10 +160,10 @@ export function useBulkUserStatus() {
   });
 }
 
-export function useExportUsers() {
+export function useExportUsers(organizationId?: string) {
   return useMutation({
     mutationFn: async () => {
-      const blob = await api.getBlob("/users/export");
+      const blob = await api.getBlob(withTenantQuery("/users/export", organizationId));
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = url;
@@ -159,10 +178,11 @@ export function useExportUsers() {
   });
 }
 
-export function useImportUsers() {
+export function useImportUsers(organizationId?: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (file: File) => api.uploadForm<UserImportResult>("/users/import", file),
+    mutationFn: (file: File) =>
+      api.uploadForm<UserImportResult>(withTenantQuery("/users/import", organizationId), file),
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
       const parts = [`${result.created} created`, `${result.updated} updated`];
