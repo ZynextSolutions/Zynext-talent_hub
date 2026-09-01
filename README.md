@@ -67,6 +67,10 @@ docker compose -f docker-compose.prod.yml up -d --build
 
 The prod compose file runs `prisma migrate deploy` before starting the API.
 
+### Railway
+
+For managed hosting (Postgres, Redis, API, Web, cron, uploads volume), see [`.railway/README.md`](.railway/README.md). The web service proxies `/api/v1` to the private API at runtime via an App Router route — no build-time API URL is required.
+
 ### CI
 
 GitHub Actions (`.github/workflows/ci.yml`) installs dependencies, pushes schema to Postgres, and builds backend + frontend on every push/PR.

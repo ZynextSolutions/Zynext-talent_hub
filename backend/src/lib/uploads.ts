@@ -57,7 +57,11 @@ export async function saveCertificateAsset(
 
 export function publicAssetUrl(relativePath: string): string {
   const origin = env.API_PUBLIC_URL.replace(/\/$/, '');
-  return `${origin}${relativePath.startsWith('/') ? relativePath : `/${relativePath}`}`;
+  const path = relativePath.startsWith('/') ? relativePath : `/${relativePath}`;
+  if (path.startsWith('/uploads/')) {
+    return `${origin}/api/v1/media${path}`;
+  }
+  return `${origin}${path}`;
 }
 
 export const LESSON_ASSET_KINDS = ['video', 'document'] as const;

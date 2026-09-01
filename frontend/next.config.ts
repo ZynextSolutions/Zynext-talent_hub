@@ -3,7 +3,6 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const apiProxyTarget = (process.env.API_PROXY_TARGET ?? "http://localhost:4000").replace(/\/$/, "");
 const isProd = process.env.NODE_ENV === "production";
 
 const nextConfig: NextConfig = {
@@ -15,14 +14,6 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "**" },
       { protocol: "http", hostname: "localhost" },
     ],
-  },
-  async rewrites() {
-    return [
-      {
-        source: "/api/v1/:path*",
-        destination: `${apiProxyTarget}/api/v1/:path*`,
-      },
-    ];
   },
   async headers() {
     const security = [

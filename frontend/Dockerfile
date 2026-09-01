@@ -6,12 +6,8 @@ RUN npm ci --prefix frontend
 
 COPY frontend ./frontend/
 RUN mkdir -p frontend/public
-ARG NEXT_PUBLIC_API_URL=/api/v1
 ARG NEXT_PUBLIC_WEB_URL=http://localhost:3000
-ARG API_PROXY_TARGET=http://localhost:4000
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_WEB_URL=$NEXT_PUBLIC_WEB_URL
-ENV API_PROXY_TARGET=$API_PROXY_TARGET
 
 RUN npm run build --prefix frontend
 

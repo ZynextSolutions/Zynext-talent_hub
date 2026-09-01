@@ -1,7 +1,9 @@
 import {
   defineRailway,
+  fn,
   github,
   group,
+  image,
   postgres,
   preserve,
   project,
@@ -11,6 +13,22 @@ import {
 } from "railway/iac";
 
 const REPO = "ZynextSolutions/Zynext-talent_hub";
+
+const JOB_PATHS = [
+  "reminders",
+  "recertify",
+  "scheduled-reports",
+  "cert-expiry",
+  "analytics-snapshots",
+] as const;
+
+function cronStartCommand(): string {
+  const calls = JOB_PATHS.map(
+    (path) =>
+      `curl -fsS -X POST "$BASE/${path}?organizationId=$ORGANIZATION_ID" -H "X-Job-Secret: $JOB_SECRET"`,
+  ).join("; echo; ");
+  return `set -eu; BASE="http://$API_HOST:$API_PORT/api/v1/jobs"; ${calls}; echo "[cron] done"`;
+}
 
 export default defineRailway(() => {
   const db = postgres("Postgres");
@@ -54,6 +72,12 @@ export default defineRailway(() => {
       JWT_REFRESH_SECRET: preserve(),
       JOB_SECRET: preserve(),
       ENCRYPTION_KEY: preserve(),
+      SENTRY_DSN: preserve(),
+      SMTP_HOST: preserve(),
+      SMTP_PORT: preserve(),
+      SMTP_USER: preserve(),
+      SMTP_PASS: preserve(),
+      SMTP_FROM: preserve(),
       CORS_ORIGINS: "https://${{web.RAILWAY_PUBLIC_DOMAIN}}",
       PUBLIC_WEB_URL: "https://${{web.RAILWAY_PUBLIC_DOMAIN}}",
       API_PUBLIC_URL: "https://${{web.RAILWAY_PUBLIC_DOMAIN}}",
@@ -78,11 +102,30 @@ export default defineRailway(() => {
       NODE_ENV: "production",
       RAILWAY_DOCKERFILE_PATH: "frontend/Dockerfile",
       NEXT_PUBLIC_API_URL: "/api/v1",
+      NEXT_PUBLIC_WEB_URL: "https://${{web.RAILWAY_PUBLIC_DOMAIN}}",
       API_PROXY_TARGET: "http://${{api.RAILWAY_PRIVATE_DOMAIN}}:${{api.PORT}}",
     },
   });
 
+  const jobs = fn("jobs", {
+    source: image("curlimages/curl:8.12.1"),
+    deploy: {
+      cronSchedule: "0 2 * * *",
+      restartPolicyType: "NEVER",
+      startCommand: cronStartCommand(),
+    },
+    env: {
+      JOB_SECRET: preserve(),
+      ORGANIZATION_ID: preserve(),
+      API_HOST: "${{api.RAILWAY_PRIVATE_DOMAIN}}",
+      API_PORT: "${{api.PORT}}",
+    },
+  });
+
   return project("Zynext TalentHub", {
-    resources: [...group("Data", [db, cache, uploads]), ...group("App", [api, web])],
+    resources: [
+      ...group("Data", [db, cache, uploads]),
+      ...group("App", [api, web, jobs]),
+    ],
   });
 });
