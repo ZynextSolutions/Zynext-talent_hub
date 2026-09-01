@@ -39,23 +39,41 @@ const railwayIpv4Agent = new Agent({
 });
 
 export function apiProxyTarget(): string {
+  const apiPort = (process.env.API_PORT ?? "").trim();
+
   const candidates = [
     (process.env.API_PROXY_TARGET ?? "").trim().replace(/\/$/, ""),
     (() => {
       const host = (process.env.API_HOST ?? "").trim();
-      const port = (process.env.API_PORT ?? "").trim();
-      return host && port ? `http://${host}:${port}` : "";
+      return host && apiPort ? `http://${host}:${apiPort}` : "";
     })(),
     // Last-resort Railway convention when the service is named "api".
-    process.env.RAILWAY_ENVIRONMENT && process.env.API_PORT
-      ? `http://api.railway.internal:${process.env.API_PORT}`
-      : "",
+    process.env.RAILWAY_ENVIRONMENT && apiPort ? `http://api.railway.internal:${apiPort}` : "",
   ].filter(Boolean);
 
-  for (const candidate of candidates) {
+  for (const raw of candidates) {
     // Unresolved Railway reference variables — skip so we can try the next candidate.
-    if (candidate.includes("${{") || candidate.includes("RAILWAY_PRIVATE_DOMAIN}")) continue;
-    return candidate;
+    if (raw.includes("${{") || raw.includes("RAILWAY_PRIVATE_DOMAIN}")) continue;
+
+    let url: URL;
+    try {
+      url = new URL(raw);
+    } catch {
+      continue;
+    }
+
+    // http://host with no port becomes :80 — the classic Railway private-net footgun.
+    // ${{api.PORT}} is empty unless PORT is set as a *service variable* on api.
+    const missingPort = !url.port || url.port === "80";
+    if (url.hostname.endsWith(".railway.internal") && missingPort) {
+      if (apiPort && apiPort !== "80") {
+        url.port = apiPort;
+        return url.toString().replace(/\/$/, "");
+      }
+      continue;
+    }
+
+    return raw;
   }
 
   return "http://localhost:4000";
@@ -222,6 +240,7 @@ export async function diagnoseProxyTarget(target: string = apiProxyTarget()) {
   const ok = attempts.some((a) => a.ok);
   const looksUnresolved =
     target.includes("${{") || target.includes("RAILWAY_PRIVATE_DOMAIN") || hostname === "localhost";
+  const missingPrivatePort = isRailwayInternalTarget(target) && (!port || port === "80");
 
   return {
     target,
@@ -234,10 +253,12 @@ export async function diagnoseProxyTarget(target: string = apiProxyTarget()) {
     ok,
     hint: ok
       ? undefined
-      : looksUnresolved
-        ? "API_PROXY_TARGET is missing or not interpolated. In Railway web Variables set exactly: http://${{api.RAILWAY_PRIVATE_DOMAIN}}:${{api.PORT}} (service name must match)."
-        : lookupError
-          ? "DNS failed for private hostname — api and web must be in the same Railway environment; private networking must be enabled."
-          : "DNS resolved but TCP to /ready failed. On api set LISTEN_HOST=:: (or redeploy latest API which binds :: on Railway) and confirm api /ready is healthy.",
+      : missingPrivatePort
+        ? "Private DNS works but port is 80 (default). On the api service set PORT=4000 as a Variable (not only runtime-injected), then on web use API_PROXY_TARGET=http://${{api.RAILWAY_PRIVATE_DOMAIN}}:${{api.PORT}} and redeploy both."
+        : looksUnresolved
+          ? "API_PROXY_TARGET is missing or not interpolated. In Railway web Variables set exactly: http://${{api.RAILWAY_PRIVATE_DOMAIN}}:${{api.PORT}} (service name must match)."
+          : lookupError
+            ? "DNS failed for private hostname — api and web must be in the same Railway environment; private networking must be enabled."
+            : "DNS resolved but TCP to /ready failed. On api set LISTEN_HOST=:: and confirm api logs show api_listening on the same port web uses.",
   };
 }

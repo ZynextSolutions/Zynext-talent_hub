@@ -78,6 +78,7 @@ Windows PowerShell: run `scripts/generate-secrets.ps1`
 2. **web** — `frontend/Dockerfile`, public domain, `/health`
 3. **api** — `backend/Dockerfile`, volume `/app/uploads`, `/ready`, secrets above
 4. **web** var: `API_PROXY_TARGET=http://${{api.RAILWAY_PRIVATE_DOMAIN}}:${{api.PORT}}`
+   - On **api**, set Variable `PORT=4000` explicitly (Railway runtime `PORT` alone is not referenceable as `${{api.PORT}}`).
 5. Deploy **api** → **web**
 6. Seed once (optional): `DATABASE_URL=… npm run db:seed`
 7. **jobs** cron: same `JOB_SECRET`, tenant `ORGANIZATION_ID`

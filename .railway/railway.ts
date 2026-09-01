@@ -60,6 +60,9 @@ export default defineRailway(() => {
     },
     env: {
       NODE_ENV: "production",
+      // Must be an explicit service variable so ${{api.PORT}} resolves for web/jobs.
+      // Railway's runtime-injected PORT is NOT referenceable across services.
+      PORT: "4000",
       RAILWAY_DOCKERFILE_PATH: "backend/Dockerfile",
       DATABASE_URL: db.env.DATABASE_URL,
       REDIS_URL: cache.env.REDIS_URL,
@@ -68,7 +71,6 @@ export default defineRailway(() => {
       BCRYPT_ROUNDS: "12",
       ALLOW_PUBLIC_ORG_REGISTER: "false",
       ALLOW_QUERY_ACCESS_TOKEN: "false",
-      // Explicit IPv6 bind for private networking (also auto-selected when RAILWAY_ENVIRONMENT is set).
       LISTEN_HOST: "::",
       JWT_ACCESS_SECRET: preserve(),
       JWT_REFRESH_SECRET: preserve(),
