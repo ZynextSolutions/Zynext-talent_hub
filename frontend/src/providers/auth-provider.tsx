@@ -7,6 +7,7 @@ import type {
   AuthSessionResponse,
   LoginResponse,
   MeResponse,
+  MfaLoginResponse,
   Organization,
   PlatformAdmin,
   PlatformAuthSessionResponse,
@@ -127,7 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const verifyMfaLogin = useCallback(
     async (mfaToken: string, code: string) => {
-      const data = await api.post<AuthSessionResponse>(
+      const data = await api.post<MfaLoginResponse>(
         "/auth/mfa/login",
         { mfaToken, code },
         { auth: false }
@@ -136,11 +137,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error("Invalid MFA login response");
       }
       setTokens(data.tokens.accessToken, data.tokens.refreshToken);
-      if ("admin" in data && data.admin) {
+      if (data.admin) {
         applyAuth({ type: "platform", admin: data.admin, permissions: [] });
       }
-      await refreshMe({ keepSessionOnFailure: "admin" in data && Boolean(data.admin) });
-      if ("admin" in data && data.admin) {
+      await refreshMe({ keepSessionOnFailure: Boolean(data.admin) });
+      if (data.admin) {
         router.push("/platform");
         return;
       }

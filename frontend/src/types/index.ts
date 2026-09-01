@@ -162,6 +162,18 @@ export interface PlatformAdmin {
   mfaEnabled?: boolean;
 }
 
+export interface MfaLoginResponse {
+  admin?: PlatformAdmin;
+  user?: User;
+  organization?: Organization;
+  tokens: {
+    accessToken: string;
+    refreshToken?: string;
+    expiresIn: number;
+  };
+  permissions?: string[];
+}
+
 export interface PlatformAuthSessionResponse {
   admin?: PlatformAdmin;
   mfaRequired?: boolean;
