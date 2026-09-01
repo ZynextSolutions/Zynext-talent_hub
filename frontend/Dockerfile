@@ -24,5 +24,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/frontend/.next/static ./.next/sta
 USER nextjs
 EXPOSE 3000
 ENV HOSTNAME=0.0.0.0
+# Prefer IPv6 when resolving Railway private DNS (*.railway.internal).
+ENV NODE_OPTIONS=--dns-result-order=ipv6first
 
 CMD ["node", "server.js"]

@@ -394,6 +394,7 @@ export interface LessonProgressDto {
   completed: boolean;
   positionSeconds: number;
   watchedSeconds: number;
+  percentage: number;
   openedAt: string | null;
   completedAt: string | null;
   updatedAt: string;
@@ -405,6 +406,7 @@ export interface CertificateDto {
   userId: Uuid;
   certificateNumber: string;
   issuedAt: string;
+  expiresAt: string | null;
   revokedAt: string | null;
   verificationUrl: string;
   kind: 'course' | 'path';
@@ -580,6 +582,28 @@ export interface ComplianceAnalyticsDto {
     status: EnrollmentStatusName;
     progressPercent: number;
     complianceStatus: 'OVERDUE' | 'DUE_SOON' | 'ON_TRACK' | 'COMPLETED';
+  }>;
+  pagination?: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
+  mandatoryTotal?: number;
+  mandatoryCompleted?: number;
+  expiringCerts?: Array<{
+    certificateId: Uuid;
+    userName: string;
+    courseTitle: string;
+    issuedAt: string;
+    expiresAt: string;
+    recertifyEveryDays: number | null;
+  }>;
+  riskDepartments?: Array<{
+    id: Uuid;
+    name: string;
+    overdueCount: number;
+    dueSoonCount: number;
   }>;
 }
 

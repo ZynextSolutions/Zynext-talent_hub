@@ -4,7 +4,7 @@ import { AppError } from '../errors/AppError';
 import { hashPassword } from '../lib/password';
 import { randomToken } from '../lib/crypto';
 import { paginated, parsePagination } from '../lib/pagination';
-import { toOrganizationDto } from '../lib/dto';
+import { toOrganizationDto } from '../lib/mappers';
 import { auditLogRepository } from '../repositories/audit-log.repository';
 import { organizationRepository } from '../repositories/organization.repository';
 import { roleRepository } from '../repositories/role.repository';

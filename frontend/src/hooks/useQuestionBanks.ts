@@ -3,7 +3,23 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { api } from "@/lib/api-client";
-import type { BankQuestion, QuestionBank } from "@/types";
+import type { BankQuestion, QuestionBank, QuestionType } from "@/types";
+
+type BankQuestionWriteBody = {
+  question?: string;
+  prompt?: string;
+  type?: QuestionType;
+  options?: string[];
+  correctOptionIndex?: number;
+  correctOptionIndices?: number[];
+  tags?: string[];
+  points?: number;
+  explanation?: string;
+  blanks?: Array<{ acceptableAnswers: string[] }>;
+  pairs?: Array<{ left: string; right: string }>;
+  minWords?: number;
+  maxWords?: number;
+};
 
 export function useQuestionBanks() {
   return useQuery({
@@ -39,22 +55,8 @@ export function useUpdateBankQuestion(bankId: string) {
     mutationFn: ({
       questionId,
       ...body
-    }: {
-      questionId: string;
-      question?: string;
-      prompt?: string;
-      type?: "MCQ" | "TRUE_FALSE" | "MULTI_SELECT" | "SHORT_ANSWER" | "FILL_BLANK" | "MATCHING" | "ESSAY";
-      options?: string[];
-      correctOptionIndex?: number;
-      correctOptionIndices?: number[];
-      tags?: string[];
-      points?: number;
-      explanation?: string;
-      blanks?: Array<{ acceptableAnswers: string[] }>;
-      pairs?: Array<{ left: string; right: string }>;
-      minWords?: number;
-      maxWords?: number;
-    }) => api.patch<BankQuestion>(`/question-banks/${bankId}/questions/${questionId}`, body),
+    }: BankQuestionWriteBody & { questionId: string }) =>
+      api.patch<BankQuestion>(`/question-banks/${bankId}/questions/${questionId}`, body),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["question-banks"] });
       queryClient.invalidateQueries({ queryKey: ["question-banks", bankId] });
@@ -67,13 +69,8 @@ export function useUpdateBankQuestion(bankId: string) {
 export function useAddBankQuestion(bankId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (body: {
-      question: string;
-      type?: "MCQ" | "TRUE_FALSE" | "MULTI_SELECT" | "SHORT_ANSWER";
-      options?: string[];
-      correctOptionIndex?: number;
-      correctOptionIndices?: number[];
-    }) => api.post<BankQuestion>(`/question-banks/${bankId}/questions`, body),
+    mutationFn: (body: BankQuestionWriteBody & { question: string }) =>
+      api.post<BankQuestion>(`/question-banks/${bankId}/questions`, body),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["question-banks"] });
       queryClient.invalidateQueries({ queryKey: ["question-banks", bankId] });

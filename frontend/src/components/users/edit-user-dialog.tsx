@@ -28,7 +28,7 @@ import { assignableRoles, formatRole } from "@/lib/roles";
 import type { User, UserRole, UserStatus } from "@/types";
 import { toast } from "sonner";
 
-const STATUSES: UserStatus[] = ["ACTIVE", "INVITED", "SUSPENDED"];
+const STATUSES: UserStatus[] = ["ACTIVE", "INVITED", "SUSPENDED", "DEACTIVATED"];
 
 interface EditUserDialogProps {
   user: User;

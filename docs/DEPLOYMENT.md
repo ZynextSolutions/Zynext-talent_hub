@@ -124,7 +124,7 @@ Demo credentials are in root `README.md` — do not use demo passwords for real 
 | P3018 syntax error near `\ufeff` | Migration file had UTF-8 BOM — fixed in repo; pull latest and reset DB |
 | API exits on boot | Check secrets; read `[boot]` log lines |
 | `/ready` timeout | Deploy logs — migration or DB connection |
-| Web login fails | Verify `API_PROXY_TARGET` on **web** |
+| Web login fails / 502 UPSTREAM_UNAVAILABLE | Open `https://<web>/api/proxy-health`. If `apiProxyTarget` is `localhost:4000`, set `API_PROXY_TARGET=http://${{api.RAILWAY_PRIVATE_DOMAIN}}:${{api.PORT}}` on **web**. If target looks correct but still unreachable, redeploy **api** (must listen on `::` for Railway IPv6 private networking) then **web**. |
 | CORS errors | `CORS_ORIGINS` must match web URL exactly |
 | Uploads lost | Mount volume at `/app/uploads` on **api** |
 

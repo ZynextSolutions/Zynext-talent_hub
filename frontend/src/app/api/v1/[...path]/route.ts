@@ -3,6 +3,7 @@ import {
   buildProxyUrl,
   forwardRequestHeaders,
   forwardResponseHeaders,
+  proxyUpstreamFetch,
 } from "@/lib/api-proxy";
 
 export const dynamic = "force-dynamic";
@@ -27,7 +28,7 @@ async function proxy(req: NextRequest, context: RouteContext): Promise<NextRespo
   }
 
   try {
-    const upstream = await fetch(url, init);
+    const upstream = await proxyUpstreamFetch(url, init);
     return new NextResponse(upstream.body, {
       status: upstream.status,
       headers: forwardResponseHeaders(upstream.headers),
@@ -40,7 +41,7 @@ async function proxy(req: NextRequest, context: RouteContext): Promise<NextRespo
         error: {
           code: "UPSTREAM_UNAVAILABLE",
           message:
-            "Cannot reach the API service. Set API_PROXY_TARGET on the web service to http://${{api.RAILWAY_PRIVATE_DOMAIN}}:${{api.PORT}} and ensure the api service is running.",
+            "Cannot reach the API over private networking. Confirm API_PROXY_TARGET=http://${{api.RAILWAY_PRIVATE_DOMAIN}}:${{api.PORT}}, api listens on ::, and both services share an environment.",
         },
       },
       { status: 502 },

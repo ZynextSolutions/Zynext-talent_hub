@@ -11,8 +11,10 @@ if (env.SENTRY_DSN) {
 }
 
 const port = env.PORT;
-const server = app.listen(port, () => {
-  logger.info({ port }, 'api_listening');
+// Railway private networking is IPv6 (or IPv6-first). Binding only the default
+// dual-stack is unreliable on Alpine; listen on `::` so *.railway.internal works.
+const server = app.listen(port, '::', () => {
+  logger.info({ port, host: '::' }, 'api_listening');
 });
 
 function shutdown(signal: string) {

@@ -34,8 +34,7 @@ import {
 } from "@/hooks/useQuestionBanks";
 
 import { useAuth } from "@/hooks/useAuth";
-
-type QuestionType = "MCQ" | "TRUE_FALSE" | "MULTI_SELECT" | "SHORT_ANSWER";
+import type { QuestionType } from "@/types";
 
 function compactOptions(options: string[], correctIndex: number) {
   const kept: string[] = [];
@@ -234,6 +233,9 @@ export default function QuestionBanksPage() {
                         <SelectItem value="TRUE_FALSE">True / False</SelectItem>
                         <SelectItem value="MULTI_SELECT">Multi-select</SelectItem>
                         <SelectItem value="SHORT_ANSWER">Short answer</SelectItem>
+                        <SelectItem value="FILL_BLANK">Fill in the blank</SelectItem>
+                        <SelectItem value="MATCHING">Matching</SelectItem>
+                        <SelectItem value="ESSAY">Essay</SelectItem>
                       </SelectContent>
                     </Select>
                     <Input

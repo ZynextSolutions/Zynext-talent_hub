@@ -51,7 +51,9 @@ Railway Config as Code (`railway.toml` / `railway.json`) is deprecated. This rep
    | api | `backend/Dockerfile` | repository root |
    | web | `frontend/Dockerfile` | repository root |
 
-   Do **not** set `PORT` on api or web. Railway injects it; the API listens on that value. Web reads `API_PROXY_TARGET=http://${{api.RAILWAY_PRIVATE_DOMAIN}}:${{api.PORT}}` at **runtime** (App Router proxy route), so redeploying api does not require rebuilding web.
+   Do **not** set `PORT` on api or web. Railway injects it; the API listens on `:::$PORT` so private IPv6 works. Web reads `API_PROXY_TARGET=http://${{api.RAILWAY_PRIVATE_DOMAIN}}:${{api.PORT}}` at **runtime** (App Router proxy route), so redeploying api does not require rebuilding web.
+
+   If the browser gets `UPSTREAM_UNAVAILABLE` / login fails while api is healthy, hit `/api/proxy-health` on web. A `localhost:4000` target means the reference variable is missing; a correct `*.railway.internal` target with `unreachable` usually means the API was not bound to IPv6 (fixed in current `backend/src/index.ts`).
 
    The API image runs `prisma migrate deploy` and only then starts listening. Healthcheck is `/ready` (not under `/api/v1`). Web healthcheck is `/health`. If `/ready` keeps failing, the process is not listening — read **Deploy logs**, not only the healthcheck panel.
 

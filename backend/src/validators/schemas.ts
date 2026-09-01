@@ -137,7 +137,7 @@ export const patchUserBody = z.object({
   lastName: z.string().min(1).max(80).optional(),
   role: z.enum(['ORG_ADMIN', 'MANAGER', 'INSTRUCTOR', 'EMPLOYEE']).optional(),
   teamId: z.string().uuid().optional(),
-  status: z.enum(['ACTIVE', 'INVITED', 'SUSPENDED']).optional(),
+  status: z.enum(['ACTIVE', 'INVITED', 'SUSPENDED', 'DEACTIVATED']).optional(),
 }).strict();
 
 export const courseBody = z.object({
@@ -447,6 +447,7 @@ export const pathEnrollBody = z.object({
 export const createEnrollmentBody = z.object({
   userId: z.string().uuid(),
   courseId: z.string().uuid(),
+  dueAt: z.string().datetime().nullable().optional(),
 });
 
 export const progressBody = z.object({

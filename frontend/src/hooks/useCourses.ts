@@ -19,11 +19,15 @@ import type {
 
 export interface CourseAssignment {
   id: string;
+  organizationId?: string;
+  courseId?: string;
   targetType: string;
   targetId: string;
+  createdByUserId?: string | null;
   dueAt?: string | null;
   recertifyEveryDays?: number | null;
   reminderDaysBefore?: number | null;
+  createdAt?: string;
 }
 
 export interface AssignCourseResult {

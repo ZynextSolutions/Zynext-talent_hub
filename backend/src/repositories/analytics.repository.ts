@@ -707,6 +707,7 @@ export class AnalyticsRepository {
         select: {
           id: true,
           issuedAt: true,
+          expiresAt: true,
           courseId: true,
           user: { select: { firstName: true, lastName: true } },
           course: { select: { title: true } },
@@ -778,9 +779,10 @@ export class AnalyticsRepository {
     const expiringCerts = certificates
       .flatMap((c) => {
         const days = recertifyByCourse.get(c.courseId);
-        if (days == null) return [];
-        const expiresAt = new Date(c.issuedAt.getTime() + days * 24 * 60 * 60 * 1000);
-        if (expiresAt > expiringEnd) return [];
+        const expiresAt =
+          c.expiresAt ??
+          (days != null ? new Date(c.issuedAt.getTime() + days * 24 * 60 * 60 * 1000) : null);
+        if (!expiresAt || expiresAt > expiringEnd) return [];
         return [
           {
             certificateId: c.id,
@@ -788,7 +790,7 @@ export class AnalyticsRepository {
             courseTitle: c.course.title,
             issuedAt: c.issuedAt.toISOString(),
             expiresAt: expiresAt.toISOString(),
-            recertifyEveryDays: days,
+            recertifyEveryDays: days ?? null,
           },
         ];
       })

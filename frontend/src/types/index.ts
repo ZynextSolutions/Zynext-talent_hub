@@ -26,6 +26,7 @@ export type UserStatus = "ACTIVE" | "INVITED" | "SUSPENDED" | "DEACTIVATED";
 
 export interface User {
   id: string;
+  organizationId?: string;
   email: string;
   firstName: string;
   lastName: string;
@@ -33,11 +34,12 @@ export interface User {
   status: UserStatus;
   avatarUrl?: string | null;
   mfaEnabled?: boolean;
-  teamId?: string;
-  departmentId?: string;
-  divisionId?: string;
+  teamId?: string | null;
+  departmentId?: string | null;
+  divisionId?: string | null;
   lastLoginAt?: string | null;
   createdAt?: string;
+  updatedAt?: string;
 }
 
 export type CertificateTheme = "midnight" | "ivory" | "slate";
@@ -381,7 +383,7 @@ export interface CourseRevisionSnapshot {
   assessments: Array<{
     id: string;
     title: string;
-    kind: "PRE" | "FINAL";
+    kind: "PRE" | "FINAL" | "SURVEY" | "MODULE_QUIZ";
     passingScore: number;
     maxAttempts: number | null;
     timeLimitSeconds: number | null;
@@ -394,15 +396,28 @@ export interface CourseRevisionDetail extends CourseRevisionSummary {
   snapshot: CourseRevisionSnapshot;
 }
 
+export type EnrollmentStatus = "ENROLLED" | "IN_PROGRESS" | "COMPLETED" | "REVOKED";
+export type EnrollmentSource =
+  | "ASSIGNMENT"
+  | "MANUAL"
+  | "MOVE_RECONCILE"
+  | "RECERTIFY"
+  | "PATH";
+
 export interface Enrollment {
   id: string;
+  organizationId?: string;
   userId: string;
   courseId: string;
-  status: string;
+  status: EnrollmentStatus;
+  source?: EnrollmentSource;
+  assignmentId?: string | null;
+  pathEnrollmentId?: string | null;
   progressPercent: number;
   dueAt?: string | null;
   isOverdue?: boolean;
   isDueSoon?: boolean;
+  completedAt?: string | null;
   enrolledAt?: string;
   updatedAt?: string;
   lastLessonId?: string | null;
@@ -411,11 +426,16 @@ export interface Enrollment {
 }
 
 export interface LessonProgress {
+  id?: string;
+  enrollmentId?: string;
   lessonId: string;
   completed: boolean;
   positionSeconds: number;
   watchedSeconds?: number;
+  percentage?: number;
   openedAt?: string | null;
+  completedAt?: string | null;
+  updatedAt?: string;
 }
 
 export interface EnrollmentDetail extends Enrollment {
@@ -493,7 +513,7 @@ export interface SessionRegistration {
   id: string;
   sessionId: string;
   userId: string;
-  status: string;
+  status: "REGISTERED" | "ATTENDED" | "NO_SHOW" | "CANCELLED";
   registeredAt: string;
   attendedAt: string | null;
   user?: { id: string; firstName: string; lastName: string; email?: string };
@@ -513,9 +533,11 @@ export interface Notification {
 
 export interface Certificate {
   id: string;
+  organizationId?: string;
   certificateNumber: string;
   userId: string;
   issuedAt: string;
+  expiresAt?: string | null;
   revokedAt?: string | null;
   verificationUrl?: string;
   kind?: "course" | "path";
@@ -810,7 +832,7 @@ export interface Assessment {
 export interface AssessmentQuestion {
   id: string;
   prompt: string;
-  type?: "MCQ" | "TRUE_FALSE" | "MULTI_SELECT" | "SHORT_ANSWER" | "FILL_BLANK" | "MATCHING" | "ESSAY";
+  type?: QuestionType;
   options: AssessmentOption[];
   order: number;
   points?: number;
@@ -870,7 +892,7 @@ export interface AssessmentAttemptReview {
     id: string;
     title: string;
     passingScore: number;
-    kind: "PRE" | "FINAL";
+    kind: "PRE" | "FINAL" | "SURVEY" | "MODULE_QUIZ";
   };
   attempt: AssessmentAttempt;
   showAnswers: boolean;
@@ -891,11 +913,20 @@ export interface QuestionBank {
   questions?: BankQuestion[];
 }
 
+export type QuestionType =
+  | "MCQ"
+  | "TRUE_FALSE"
+  | "MULTI_SELECT"
+  | "SHORT_ANSWER"
+  | "FILL_BLANK"
+  | "MATCHING"
+  | "ESSAY";
+
 export interface BankQuestion {
   id: string;
   bankId: string;
   question: string;
-  type: "MCQ" | "TRUE_FALSE" | "MULTI_SELECT" | "SHORT_ANSWER";
+  type: QuestionType;
   options: AssessmentOption[];
   tags?: string[];
 }
@@ -920,10 +951,14 @@ export interface PathCourse {
 
 export interface PathEnrollment {
   id: string;
+  organizationId?: string;
   pathId: string;
   userId: string;
-  status: string;
+  status: "ENROLLED" | "IN_PROGRESS" | "COMPLETED" | "REVOKED";
   progressPercent: number;
+  enrolledAt?: string;
+  completedAt?: string | null;
+  updatedAt?: string;
   path?: Pick<LearningPath, "id" | "title" | "status">;
   user?: Pick<User, "id" | "firstName" | "lastName" | "email">;
 }
@@ -1000,7 +1035,7 @@ export interface ComplianceAnalytics {
     courseTitle: string;
     issuedAt: string;
     expiresAt: string;
-    recertifyEveryDays: number;
+    recertifyEveryDays: number | null;
   }>;
 }
 
