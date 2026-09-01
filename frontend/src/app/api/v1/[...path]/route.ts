@@ -35,13 +35,14 @@ async function proxy(req: NextRequest, context: RouteContext): Promise<NextRespo
     });
   } catch (err) {
     console.error("[api-proxy] upstream fetch failed", { url, err });
+    const detail = err instanceof Error ? err.message : String(err);
     return NextResponse.json(
       {
         success: false,
         error: {
           code: "UPSTREAM_UNAVAILABLE",
-          message:
-            "Cannot reach the API over private networking. Confirm API_PROXY_TARGET=http://${{api.RAILWAY_PRIVATE_DOMAIN}}:${{api.PORT}}, api listens on ::, and both services share an environment.",
+          message: detail,
+          hint: "Open /api/proxy-health on this host for DNS and IPv4/IPv6 attempt details.",
         },
       },
       { status: 502 },

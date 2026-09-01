@@ -20,11 +20,12 @@ RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
 COPY --from=builder /app/frontend/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/frontend/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/frontend/.next/static ./.next/static
+# Ensure undici is present for the private-network API proxy (serverExternalPackages).
+COPY --from=builder --chown=nextjs:nodejs /app/frontend/node_modules/undici ./node_modules/undici
 
 USER nextjs
 EXPOSE 3000
 ENV HOSTNAME=0.0.0.0
-# Prefer IPv6 when resolving Railway private DNS (*.railway.internal).
 ENV NODE_OPTIONS=--dns-result-order=ipv6first
 
 CMD ["node", "server.js"]

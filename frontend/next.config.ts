@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   output: "standalone",
   outputFileTracingRoot: path.join(__dirname),
+  serverExternalPackages: ["undici"],
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "**" },

@@ -11,12 +11,11 @@ if (env.SENTRY_DSN) {
 }
 
 const port = env.PORT;
-// Railway private networking is IPv6. Bind `::` there; keep `0.0.0.0` for local/CI
-// so curl/fetch to 127.0.0.1 keeps working.
+// Always dual-stack in production so Railway private IPv6 + local IPv4 both work.
+// Override with LISTEN_HOST (CI sets 0.0.0.0).
 const host =
-  process.env.LISTEN_HOST ??
-  (process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PRIVATE_DOMAIN ? '::' : '0.0.0.0');
-const server = app.listen(port, host, () => {
+  process.env.LISTEN_HOST ?? (env.NODE_ENV === 'production' ? '::' : '0.0.0.0');
+const server = app.listen({ port, host, ipv6Only: false }, () => {
   logger.info({ port, host }, 'api_listening');
 });
 

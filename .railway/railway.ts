@@ -105,9 +105,11 @@ export default defineRailway(() => {
       RAILWAY_DOCKERFILE_PATH: "frontend/Dockerfile",
       NEXT_PUBLIC_API_URL: "/api/v1",
       NEXT_PUBLIC_WEB_URL: "https://${{web.RAILWAY_PUBLIC_DOMAIN}}",
-      // Private network is IPv6; prefer AAAA so undici does not stall on unreachable A records.
       NODE_OPTIONS: "--dns-result-order=ipv6first",
+      // Prefer private DNS; also expose host/port for the proxy fallback constructor.
       API_PROXY_TARGET: "http://${{api.RAILWAY_PRIVATE_DOMAIN}}:${{api.PORT}}",
+      API_HOST: "${{api.RAILWAY_PRIVATE_DOMAIN}}",
+      API_PORT: "${{api.PORT}}",
     },
   });
 
