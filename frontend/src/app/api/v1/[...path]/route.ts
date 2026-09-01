@@ -26,11 +26,26 @@ async function proxy(req: NextRequest, context: RouteContext): Promise<NextRespo
     init.duplex = "half";
   }
 
-  const upstream = await fetch(url, init);
-  return new NextResponse(upstream.body, {
-    status: upstream.status,
-    headers: forwardResponseHeaders(upstream.headers),
-  });
+  try {
+    const upstream = await fetch(url, init);
+    return new NextResponse(upstream.body, {
+      status: upstream.status,
+      headers: forwardResponseHeaders(upstream.headers),
+    });
+  } catch (err) {
+    console.error("[api-proxy] upstream fetch failed", { url, err });
+    return NextResponse.json(
+      {
+        success: false,
+        error: {
+          code: "UPSTREAM_UNAVAILABLE",
+          message:
+            "Cannot reach the API service. Set API_PROXY_TARGET on the web service to http://${{api.RAILWAY_PRIVATE_DOMAIN}}:${{api.PORT}} and ensure the api service is running.",
+        },
+      },
+      { status: 502 },
+    );
+  }
 }
 
 export const GET = proxy;
