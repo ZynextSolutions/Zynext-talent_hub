@@ -11,7 +11,7 @@ const HOP_BY_HOP = new Set([
 ]);
 
 export function apiProxyTarget(): string {
-  return (process.env.API_PROXY_TARGET ?? "http://localhost:4000").replace(/\/$/, "");
+  return (process.env.API_PROXY_TARGET ?? "http://localhost:4000").trim().replace(/\/$/, "");
 }
 
 export function buildProxyUrl(pathSegments: string[], search: string): string {
