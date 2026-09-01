@@ -17,23 +17,35 @@ jobs (cron) → private api /api/v1/jobs/*
 - **Production:** `backend/boot.cjs` runs `prisma migrate deploy` before the API listens.
 - **Local dev:** `npm run db:migrate` (interactive) or `npm run db:migrate:deploy` (CI/prod style).
 
-### After upgrading from the old multi-file migration chain
+### P3009 — failed migration (including `20250830160000_baseline`)
 
-If deploy logs show **P3009** or reference migrations such as `20250831220000_scorm_mvp`:
+Prisma blocks new runs when a migration row has `finished_at IS NULL`. That usually means the SQL **failed partway**, leaving a **partial schema**.
 
-1. **Reset Postgres** (recommended for first Railway deploy):
-   - Railway → Postgres → delete service or wipe data → create fresh Postgres
-   - Point **api** `DATABASE_URL` at the new database
-2. Or run in SQL console:
+**Do not only run** `DELETE FROM "_prisma_migrations" …` — the next deploy will hit "already exists" errors and fail again.
+
+**Fix (Railway GUI):**
+
+1. Open **Postgres** → **Query** (or Data → SQL).
+2. Paste and run [scripts/railway-db-reset.sql](../scripts/railway-db-reset.sql):
+
    ```sql
-   DROP SCHEMA public CASCADE;
+   DROP SCHEMA IF EXISTS public CASCADE;
    CREATE SCHEMA public;
    GRANT ALL ON SCHEMA public TO postgres;
    GRANT ALL ON SCHEMA public TO public;
    ```
-3. Redeploy **api** — baseline migration applies cleanly.
 
-Do **not** use `prisma migrate resolve` unless you know exactly which SQL already ran.
+   If `GRANT … TO postgres` errors, ignore it — the `DROP SCHEMA` / `CREATE SCHEMA` lines are what matter.
+
+3. **Stop** any in-progress **api** deploy (or wait for it to finish failing).
+4. Redeploy **api** **once** and watch logs for:
+   `Applying migration 20250830160000_baseline` → success → `api_listening`.
+
+**Alternative:** delete the Postgres service → add a new Postgres → update **api** `DATABASE_URL` → redeploy **api**.
+
+### After upgrading from the old multi-file migration chain
+
+Same reset as P3009 above — old tables/enums conflict with the baseline migration.
 
 ## Required secrets (api)
 

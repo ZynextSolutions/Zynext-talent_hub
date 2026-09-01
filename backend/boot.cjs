@@ -45,9 +45,9 @@ const migrate = spawnSync(process.execPath, [prismaCli, 'migrate', 'deploy'], {
 
 if (migrate.status !== 0) {
   console.error('[boot] prisma migrate deploy failed', migrate.status);
-  console.error('[boot] P3009 (failed migration row): wipe the Postgres database or run:');
-  console.error('[boot]   DELETE FROM "_prisma_migrations" WHERE finished_at IS NULL;');
-  console.error('[boot] If the DB used an older multi-file migration chain, reset Postgres and redeploy.');
+  console.error('[boot] P3009: a migration failed partway. DELETE failed rows is NOT enough.');
+  console.error('[boot] Run scripts/railway-db-reset.sql in Postgres (DROP SCHEMA public CASCADE), then redeploy api ONCE.');
+  console.error('[boot] Or delete the Postgres service and create a new one, then point DATABASE_URL at it.');
   console.error('[boot] See docs/DEPLOYMENT.md');
   process.exit(migrate.status || 1);
 }
