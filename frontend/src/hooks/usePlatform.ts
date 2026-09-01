@@ -41,13 +41,16 @@ export function useCreatePlatformOrganization() {
       adminFirstName: string;
       adminLastName: string;
     }) =>
-      api.post<{ organization: PlatformOrganization; invite: { email: string; token: string } }>(
-        "/platform/organizations",
-        body
-      ),
+      api.post<{
+        organization: PlatformOrganization;
+        invite: { email: string; sent: boolean; expiresInDays: number; acceptUrl: string };
+      }>("/platform/organizations", body),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["platform", "organizations"] });
-      toast.success(`Organization created — invite sent to ${data.invite.email}`);
+      toast.success(`Organization created — invite for ${data.invite.email}`, {
+        description: "If Resend is not configured, copy the accept link from the success dialog.",
+        duration: 8000,
+      });
     },
     onError: () => toast.error("Failed to create organization"),
   });

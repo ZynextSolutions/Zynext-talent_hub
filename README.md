@@ -57,7 +57,7 @@ npm run dev        # API :4000, Web :3000
 ## Production Deployment
 
 1. Copy `.env.example` to `.env` and set strong `JWT_*` secrets, `DATABASE_URL`, and `CORS_ORIGINS`.
-2. Configure SMTP env vars for invite/reset emails (dev logs emails to console).
+2. Configure `RESEND_API_KEY` (and optional `MAIL_FROM`) for invite/reset emails (dev logs emails to console without the key).
 3. Optionally set `REDIS_URL` for distributed rate limiting.
 4. Deploy with Docker:
 

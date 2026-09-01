@@ -71,6 +71,10 @@ Windows PowerShell: run `scripts/generate-secrets.ps1`
 | `CORS_ORIGINS` | Web public URL (`https://…`) |
 | `PUBLIC_WEB_URL` | Same as web domain |
 | `API_PUBLIC_URL` | Same as web domain (browser proxy) |
+| `RESEND_API_KEY` | Resend API key (`re_…`) — required to actually send mail |
+| `MAIL_FROM` | From header, e.g. `Zynext TalentHub <noreply@yourdomain.com>` (verified domain). Dev/test: `… <onboarding@resend.dev>` |
+
+Without `RESEND_API_KEY`, invites/resets only log to the **api** console (`mail_dev_console` / `[mail:dev]`). After creating an org, the platform UI also shows a copyable accept-invite link.
 
 ## Railway GUI checklist
 

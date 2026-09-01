@@ -112,7 +112,7 @@ export class PlatformService {
     });
     return {
       organization: toOrganizationDto(created.org),
-      invite: { email, sent: true, expiresInDays: 7 },
+      invite: { email, sent: true, expiresInDays: 7, acceptUrl: url },
     };
   }
 

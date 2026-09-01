@@ -133,7 +133,7 @@ backend/
     │   ├── certificate.service.ts  # issuance rules
     │   ├── analytics.service.ts
     │   ├── audit.service.ts
-    │   └── mail.service.ts         # interface; SMTP in prod, console in dev
+    │   └── mail.service.ts         # Resend in prod; console in dev
     ├── repositories/
     │   ├── prisma.ts               # singleton PrismaClient
     │   ├── base.repository.ts      # assertOrg(organizationId) helper
@@ -1599,7 +1599,7 @@ pino, level `info` prod / `debug` dev. Bind `requestId`, `actorId`, `organizatio
 
 #### Mail
 
-`MailService` interface: `sendInvite`, `sendPasswordReset`, `sendCertificateIssued`. Dev transport: console. Prod: SMTP (`SMTP_HOST`). Templates are plaintext + simple HTML. Failures of mail after commit are logged; they do not roll back the transaction (invite token still valid).
+`MailService` interface: `sendInvite`, `sendPasswordReset`, `sendCertificateIssued`. Dev transport: console. Prod: Resend (`RESEND_API_KEY`). Templates are plaintext + simple HTML. Failures of mail after commit are logged; they do not roll back the transaction (invite token still valid).
 
 #### Testing (required for merge)
 
@@ -1635,7 +1635,7 @@ pino, level `info` prod / `debug` dev. Bind `requestId`, `actorId`, `organizatio
 | `ENCRYPTION_KEY` | prod yes | 32-byte base64 (`openssl rand -base64 32`) |
 | `PUBLIC_WEB_URL` | yes | certificate verification links |
 | `API_PUBLIC_URL` | yes | |
-| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `SMTP_FROM` | prod | |
+| `RESEND_API_KEY` / `MAIL_FROM` | prod | |
 | `LOG_LEVEL` | no | default `info` |
 
 ---

@@ -66,7 +66,7 @@ Railway Config as Code (`railway.toml` / `railway.json`) is deprecated. This rep
 - **One API replica** while uploads live on the volume. Use S3 (`S3_BUCKET` + endpoint + keys) before you scale API replicas.
 - `ALLOW_PUBLIC_ORG_REGISTER=false` and `ALLOW_QUERY_ACCESS_TOKEN=false`.
 - Do not seed AMI (or any customer) with demo passwords.
-- Optional dashboard vars on **api** (all use `preserve()` in IaC): `SENTRY_DSN`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`.
+- Optional dashboard vars on **api** (all use `preserve()` in IaC): `SENTRY_DSN`, `RESEND_API_KEY`, `MAIL_FROM`.
 
 ## Cron jobs (`jobs` service)
 

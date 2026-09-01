@@ -1,4 +1,6 @@
+import { Resend } from 'resend';
 import { env } from '../config/env';
+import { logger } from '../lib/logger';
 
 export interface MailPayload {
   to: string;
@@ -8,15 +10,62 @@ export interface MailPayload {
 }
 
 class MailService {
+  private client: Resend | null | undefined;
+
+  private getClient(): Resend | null {
+    if (this.client !== undefined) return this.client;
+    if (!env.RESEND_API_KEY) {
+      this.client = null;
+      return null;
+    }
+    this.client = new Resend(env.RESEND_API_KEY);
+    return this.client;
+  }
+
   async send(payload: MailPayload): Promise<void> {
-    if (env.NODE_ENV === 'production' && env.SMTP_HOST) {
-      // SMTP transport is configured at deploy time; failures must not roll back commits.
+    const from = env.MAIL_FROM || 'Zynext TalentHub <onboarding@resend.dev>';
+    const client = this.getClient();
+
+    if (!client) {
+      logger.info(
+        { to: payload.to, subject: payload.subject, preview: payload.text.slice(0, 500) },
+        'mail_dev_console',
+      );
       // eslint-disable-next-line no-console
-      console.info(JSON.stringify({ level: 'info', msg: 'mail_queued', to: payload.to, subject: payload.subject }));
+      console.info(`[mail:dev] to=${payload.to} subject=${payload.subject}\n${payload.text}`);
       return;
     }
-    // eslint-disable-next-line no-console
-    console.info(`[mail:dev] to=${payload.to} subject=${payload.subject}\n${payload.text}`);
+
+    try {
+      const { data, error } = await client.emails.send({
+        from,
+        to: payload.to,
+        subject: payload.subject,
+        text: payload.text,
+        html: payload.html ?? `<pre>${payload.text}</pre>`,
+      });
+      if (error) {
+        logger.error(
+          { err: error, to: payload.to, subject: payload.subject },
+          'mail_send_failed',
+        );
+        // eslint-disable-next-line no-console
+        console.error('[mail] send failed', error);
+        return;
+      }
+      logger.info(
+        { to: payload.to, subject: payload.subject, messageId: data?.id },
+        'mail_sent',
+      );
+    } catch (err) {
+      // Do not fail the business transaction (invite/reset already committed).
+      logger.error(
+        { err, to: payload.to, subject: payload.subject },
+        'mail_send_failed',
+      );
+      // eslint-disable-next-line no-console
+      console.error('[mail] send failed', err);
+    }
   }
 
   sendInvite(
