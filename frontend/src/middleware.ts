@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const AUTH_FLAG = "cor_logged_in";
+const AUTH_FLAG = "cor_logged_in"; // keep in sync with api-client AUTH_FLAG_COOKIE
 
 const PROTECTED_PREFIXES = [
   "/dashboard",

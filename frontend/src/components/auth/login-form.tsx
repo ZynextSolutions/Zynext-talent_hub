@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Loader2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -40,7 +40,9 @@ function RegisterLink() {
 }
 
 export function LoginForm() {
-  const { login, verifyMfaLogin, completeSsoExchange } = useAuth();
+  const router = useRouter();
+  const { login, verifyMfaLogin, completeSsoExchange, isAuthenticated, isPlatformAdmin, isLoading } =
+    useAuth();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState(searchParams.get("email") ?? "");
   const [password, setPassword] = useState("");
@@ -49,6 +51,11 @@ export function LoginForm() {
   const [mfaToken, setMfaToken] = useState<string | null>(null);
   const [mfaCode, setMfaCode] = useState("");
   const ssoExchangeConsumed = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (isLoading || !isAuthenticated) return;
+    router.replace(isPlatformAdmin ? "/platform" : "/dashboard");
+  }, [isAuthenticated, isLoading, isPlatformAdmin, router]);
 
   useEffect(() => {
     const exchange = searchParams.get("ssoExchange");
@@ -133,6 +140,14 @@ export function LoginForm() {
     const qs = params.toString();
     return qs ? `/forgot-password?${qs}` : "/forgot-password";
   })();
+
+  if (isLoading || isAuthenticated) {
+    return (
+      <div className="flex justify-center py-8">
+        <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
+      </div>
+    );
+  }
 
   if (mfaToken) {
     return (

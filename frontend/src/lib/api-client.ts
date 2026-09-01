@@ -42,20 +42,36 @@ export function resolveApiUrl(path: string): string {
 let accessToken: string | null = null;
 let refreshPromise: Promise<string | null> | null = null;
 
+/** Soft flag for Next middleware; refresh JWT stays httpOnly. Keep in sync with middleware.ts */
+export const AUTH_FLAG_COOKIE = "cor_logged_in";
+
 function isBrowser(): boolean {
-  return typeof window !== 'undefined';
+  return typeof window !== "undefined";
+}
+
+function setAuthFlagCookie(loggedIn: boolean): void {
+  if (!isBrowser()) return;
+  if (loggedIn) {
+    const secure = window.location.protocol === "https:" ? "; Secure" : "";
+    // Align roughly with refresh TTL (7d); middleware only needs a presence flag.
+    document.cookie = `${AUTH_FLAG_COOKIE}=1; Path=/; Max-Age=604800; SameSite=Lax${secure}`;
+    return;
+  }
+  document.cookie = `${AUTH_FLAG_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax`;
 }
 
 function withCredentials(init: RequestInit = {}): RequestInit {
-  return { ...init, credentials: 'include' };
+  return { ...init, credentials: "include" };
 }
 
 export function setTokens(access: string, _refresh?: string): void {
   accessToken = access;
+  setAuthFlagCookie(true);
 }
 
 export function clearTokens(): void {
   accessToken = null;
+  setAuthFlagCookie(false);
 }
 
 export function getAccessToken(): string | null {
