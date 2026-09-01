@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowLeft, Loader2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -11,12 +12,18 @@ import { useAuth } from "@/hooks/useAuth";
 import { ApiClientError } from "@/lib/api-client";
 
 export function PlatformLoginForm() {
-  const { platformLogin, verifyMfaLogin } = useAuth();
+  const router = useRouter();
+  const { platformLogin, verifyMfaLogin, isPlatformAdmin, isLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mfaToken, setMfaToken] = useState<string | null>(null);
   const [mfaCode, setMfaCode] = useState("");
+
+  useEffect(() => {
+    if (isLoading || !isPlatformAdmin) return;
+    router.replace("/platform");
+  }, [isLoading, isPlatformAdmin, router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

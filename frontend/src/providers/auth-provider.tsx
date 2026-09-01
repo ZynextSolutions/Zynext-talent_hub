@@ -86,14 +86,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const refreshMe = useCallback(async () => {
+  const refreshMe = useCallback(async (options?: { keepSessionOnFailure?: boolean }) => {
     hydrateRefreshToken();
     try {
       const data = await api.get<MeResponse>("/auth/me");
       applyAuth(data);
     } catch {
-      clearTokens();
-      clearAuth();
+      if (!options?.keepSessionOnFailure) {
+        clearTokens();
+        clearAuth();
+      }
     }
   }, [applyAuth, clearAuth]);
 
@@ -134,14 +136,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error("Invalid MFA login response");
       }
       setTokens(data.tokens.accessToken, data.tokens.refreshToken);
-      await refreshMe();
+      if ("admin" in data && data.admin) {
+        applyAuth({ type: "platform", admin: data.admin, permissions: [] });
+      }
+      await refreshMe({ keepSessionOnFailure: "admin" in data && Boolean(data.admin) });
       if ("admin" in data && data.admin) {
         router.push("/platform");
         return;
       }
       router.push("/dashboard");
     },
-    [refreshMe, router]
+    [applyAuth, refreshMe, router]
   );
 
   const completeSsoExchange = useCallback(
@@ -179,11 +184,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error("Invalid platform login response");
       }
       setTokens(data.tokens.accessToken, data.tokens.refreshToken);
-      await refreshMe();
+      if (data.admin) {
+        applyAuth({ type: "platform", admin: data.admin, permissions: [] });
+      }
+      await refreshMe({ keepSessionOnFailure: Boolean(data.admin) });
       router.push("/platform");
       return { mfaRequired: false };
     },
-    [refreshMe, router]
+    [applyAuth, refreshMe, router]
   );
 
   const register = useCallback(
