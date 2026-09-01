@@ -125,6 +125,7 @@ Demo credentials are in root `README.md` — do not use demo passwords for real 
 | API exits on boot | Check secrets; read `[boot]` log lines |
 | `/ready` timeout | Deploy logs — migration or DB connection |
 | Web login fails / 502 UPSTREAM_UNAVAILABLE | Open `https://<web>/api/proxy-health`. If `apiProxyTarget` is `localhost:4000`, set `API_PROXY_TARGET=http://${{api.RAILWAY_PRIVATE_DOMAIN}}:${{api.PORT}}` on **web**. If target looks correct but still unreachable, redeploy **api** (must listen on `::` for Railway IPv6 private networking) then **web**. |
+| `next build` fails on `/500` with `<Html> should not be imported outside of pages/_document` | Misleading Next.js error. Cause is almost always `NODE_ENV=development` during build (e.g. from root `.env`). Unset it or run `NODE_ENV=production next build`. Frontend `npm run build` now forces production. |
 | CORS errors | `CORS_ORIGINS` must match web URL exactly |
 | Uploads lost | Mount volume at `/app/uploads` on **api** |
 
