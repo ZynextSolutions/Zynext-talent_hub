@@ -31,5 +31,6 @@ COPY --from=builder /app/backend/node_modules ./backend/node_modules
 COPY --from=builder /app/backend/dist ./backend/dist
 COPY backend/boot.cjs ./backend/boot.cjs
 
+# boot.cjs: prisma migrate deploy (baseline migration) then node dist/index.js
 EXPOSE 4000
 CMD ["node", "backend/boot.cjs"]

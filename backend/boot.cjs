@@ -36,17 +36,21 @@ if (!fs.existsSync(prismaCli)) {
   process.exit(1);
 }
 
+console.log('[boot] running prisma migrate deploy');
 const migrate = spawnSync(process.execPath, [prismaCli, 'migrate', 'deploy'], {
   stdio: 'inherit',
   env: process.env,
   cwd: root,
 });
+
 if (migrate.status !== 0) {
   console.error('[boot] prisma migrate deploy failed', migrate.status);
-  console.error(
-    '[boot] If logs show P3009, in Postgres run: DELETE FROM "_prisma_migrations" WHERE finished_at IS NULL; then redeploy. Do not auto-resolve.',
-  );
+  console.error('[boot] P3009 (failed migration row): wipe the Postgres database or run:');
+  console.error('[boot]   DELETE FROM "_prisma_migrations" WHERE finished_at IS NULL;');
+  console.error('[boot] If the DB used an older multi-file migration chain, reset Postgres and redeploy.');
+  console.error('[boot] See docs/DEPLOYMENT.md');
   process.exit(migrate.status || 1);
 }
 
+console.log('[boot] migrations applied, starting API');
 require('./dist/index.js');

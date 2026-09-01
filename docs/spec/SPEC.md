@@ -6,7 +6,8 @@ See [README.md](../README.md) for setup instructions.
 
 - [Backend API](./BACKEND.md)
 - Frontend UI — luxury hybrid design (Linear shell + Stripe KPI cards)
-- Database — Prisma schema at `prisma/schema.prisma`
+- Database — Prisma schema at `prisma/schema.prisma`; baseline migration `20250830160000_baseline`
+- Deployment — [DEPLOYMENT.md](../DEPLOYMENT.md) (Railway, Docker, P3009)
 - Security — JWT, RBAC, tenant isolation via `organization_id`
 
 ## Architecture

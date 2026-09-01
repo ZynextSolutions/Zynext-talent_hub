@@ -15,10 +15,10 @@ Multi-tenant corporate LMS with organization hierarchy, RBAC, drag-and-drop org 
 
 ```
 Cor_LMS/
-├── prisma/           # Schema, migrations, seed
-├── backend/          # Express API (/api/v1)
+├── prisma/           # Schema, baseline migration, seed (see prisma.config.ts)
+├── backend/          # Express API (/api/v1), boot.cjs runs migrate on start
 ├── frontend/         # Next.js App Router
-├── docs/spec/        # Specifications
+├── docs/             # DEPLOYMENT.md, spec/
 ├── docker-compose.yml          # Local PostgreSQL
 └── docker-compose.prod.yml     # Full stack (postgres + api + web)
 ```
@@ -40,7 +40,7 @@ npm install --prefix frontend
 cp .env.example .env
 
 docker compose up -d
-npm run db:push    # dev schema sync
+npm run db:migrate:deploy   # or db:push for quick local sync
 npm run db:seed
 
 npm run dev        # API :4000, Web :3000
@@ -65,11 +65,15 @@ npm run dev        # API :4000, Web :3000
 docker compose -f docker-compose.prod.yml up -d --build
 ```
 
-The prod compose file runs `prisma migrate deploy` before starting the API.
+The prod compose file runs `prisma migrate deploy` via `backend/boot.cjs` before the API listens.
+
+Full ops guide: **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** (secrets, P3009, Railway GUI, seed).
 
 ### Railway
 
-For managed hosting (Postgres, Redis, API, Web, cron, uploads volume), see [`.railway/README.md`](.railway/README.md). The web service proxies `/api/v1` to the private API at runtime via an App Router route — no build-time API URL is required.
+For managed hosting (Postgres, Redis, API, Web, cron, uploads volume), see [`.railway/README.md`](.railway/README.md). The web service proxies `/api/v1` to the private API at runtime.
+
+**If you previously deployed and see P3009:** reset the Railway Postgres database, then redeploy **api** (migration history was squashed to a single baseline).
 
 ### CI
 
@@ -104,6 +108,8 @@ rm -rf frontend/.next && npm run dev
 ```
 
 **Database connection failed:** Ensure `docker compose up -d` is running and `DATABASE_URL` matches `docker-compose.yml` credentials.
+
+**Railway P3009 / failed migration:** Reset Postgres and redeploy — see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ## License
 

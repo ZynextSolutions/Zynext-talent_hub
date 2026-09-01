@@ -27,7 +27,15 @@ Railway Config as Code (`railway.toml` / `railway.json`) is deprecated. This rep
    openssl rand -base64 32       # ENCRYPTION_KEY  (exactly 32 bytes, base64)
    ```
 
+   Windows: `powershell -File scripts/generate-secrets.ps1`
+
    After a custom domain is attached to web, change `CORS_ORIGINS`, `PUBLIC_WEB_URL`, and `API_PUBLIC_URL` from the generated `*.up.railway.app` host to `https://your-domain`.
+
+## Database (migrations)
+
+- Schema is applied via **one baseline migration** (`20250830160000_baseline`).
+- **api** `boot.cjs` runs `prisma migrate deploy` on every start.
+- If deploy fails with **P3009** (old migration chain or partial apply), **reset Postgres** and redeploy **api**. Details: [docs/DEPLOYMENT.md](../docs/DEPLOYMENT.md).
 
 4. Set secrets on **jobs** (cron):
 

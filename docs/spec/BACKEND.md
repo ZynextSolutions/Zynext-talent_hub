@@ -34,7 +34,9 @@ Controllers must not import Prisma. Repositories must not contain business rules
 
 ### 4.2 Folder structure (`backend/src/`)
 
-Prisma schema, migrations, and seed live at **repo root** (`prisma/`). The backend package generates/consumes the client via `prisma.schema` path in `backend/package.json`.
+# Prisma schema, migrations, and seed live at repo root (`prisma/`).
+# Migrations: single baseline `20250830160000_baseline` (generated from schema.prisma).
+# Config: `prisma.config.ts` at repo root. Production boot runs `prisma migrate deploy` via `backend/boot.cjs`.
 
 ```
 backend/
@@ -192,9 +194,11 @@ Root Prisma (consumed, not owned, by backend):
 ```
 prisma/
 ├── schema.prisma
-├── migrations/
+├── migrations/20250830160000_baseline/   # single production baseline
 └── seed.ts
 ```
+
+Prisma CLI config: `prisma.config.ts` (repo root). Production API entry: `backend/boot.cjs` → `migrate deploy` → `dist/index.js`.
 
 ---
 
@@ -1566,7 +1570,7 @@ Response: `429 RATE_LIMITED` with `Retry-After`. Headers `RateLimit-Limit`, `Rat
 
 #### 4.10.7 Secrets and config
 
-Boot fails if any required env var is missing (`env.ts` zod). Never commit `.env`. Secrets: `DATABASE_URL`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `REDIS_URL`, `SMTP_*`.
+Boot fails if any required env var is missing (`env.ts` zod). Never commit `.env`. Production boot: `backend/boot.cjs` runs `prisma migrate deploy` then loads the API. Ops: [docs/DEPLOYMENT.md](../../DEPLOYMENT.md).
 
 #### 4.10.8 Audit log
 
@@ -1627,6 +1631,8 @@ pino, level `info` prod / `debug` dev. Bind `requestId`, `actorId`, `organizatio
 | `BCRYPT_ROUNDS` | no | default `12`; prod min 12 |
 | `CORS_ORIGINS` | yes | comma-separated |
 | `REDIS_URL` | prod yes | rate limit + optional lockout |
+| `JOB_SECRET` | prod yes | min 16 chars; cron job auth |
+| `ENCRYPTION_KEY` | prod yes | 32-byte base64 (`openssl rand -base64 32`) |
 | `PUBLIC_WEB_URL` | yes | certificate verification links |
 | `API_PUBLIC_URL` | yes | |
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `SMTP_FROM` | prod | |

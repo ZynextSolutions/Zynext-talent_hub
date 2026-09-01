@@ -3,7 +3,14 @@ import dotenv from 'dotenv';
 import { z } from 'zod';
 import { encryptionKeyIsValid } from '../lib/secret-box';
 
-dotenv.config({ path: path.resolve(process.cwd(), '../.env') });
+if (process.env.NODE_ENV !== 'production') {
+  for (const envPath of [
+    path.resolve(process.cwd(), '.env'),
+    path.resolve(process.cwd(), '../.env'),
+  ]) {
+    dotenv.config({ path: envPath });
+  }
+}
 
 const envSchema = z
   .object({
