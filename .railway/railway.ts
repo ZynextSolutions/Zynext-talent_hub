@@ -68,6 +68,8 @@ export default defineRailway(() => {
       BCRYPT_ROUNDS: "12",
       ALLOW_PUBLIC_ORG_REGISTER: "false",
       ALLOW_QUERY_ACCESS_TOKEN: "false",
+      // Explicit IPv6 bind for private networking (also auto-selected when RAILWAY_ENVIRONMENT is set).
+      LISTEN_HOST: "::",
       JWT_ACCESS_SECRET: preserve(),
       JWT_REFRESH_SECRET: preserve(),
       JOB_SECRET: preserve(),

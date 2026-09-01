@@ -11,10 +11,13 @@ if (env.SENTRY_DSN) {
 }
 
 const port = env.PORT;
-// Railway private networking is IPv6 (or IPv6-first). Binding only the default
-// dual-stack is unreliable on Alpine; listen on `::` so *.railway.internal works.
-const server = app.listen(port, '::', () => {
-  logger.info({ port, host: '::' }, 'api_listening');
+// Railway private networking is IPv6. Bind `::` there; keep `0.0.0.0` for local/CI
+// so curl/fetch to 127.0.0.1 keeps working.
+const host =
+  process.env.LISTEN_HOST ??
+  (process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PRIVATE_DOMAIN ? '::' : '0.0.0.0');
+const server = app.listen(port, host, () => {
+  logger.info({ port, host }, 'api_listening');
 });
 
 function shutdown(signal: string) {
