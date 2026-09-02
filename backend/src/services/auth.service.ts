@@ -239,22 +239,38 @@ class AuthService {
     return tokenService.rotate(refreshToken, meta ?? {});
   }
 
-  async logout(auth: AuthPrincipal, refreshToken?: string) {
+  async logout(auth: AuthPrincipal | null, refreshToken?: string) {
     if (refreshToken) {
       const hash = tokenService.hashRaw(refreshToken);
       const row = await prisma.refreshToken.findFirst({ where: { tokenHash: hash } });
-      if (row) await tokenService.revokeFamily(row.familyId);
-    } else {
-      await tokenService.revokeFamily(auth.tokenFamilyId);
+      if (row) {
+        await tokenService.revokeFamily(row.familyId);
+        const actorType =
+          row.actorType === 'platform' || row.actorType === 'system' || row.actorType === 'user'
+            ? row.actorType
+            : (auth?.actorType ?? 'user');
+        await auditService.record({
+          organizationId: auth?.organizationId ?? null,
+          actorType,
+          actorId: row.userId ?? row.platformAdminId ?? auth?.sub ?? 'unknown',
+          action: 'AUTH_LOGOUT',
+          resourceType: 'User',
+          resourceId: row.userId ?? row.platformAdminId ?? auth?.sub ?? undefined,
+        });
+        return { loggedOut: true };
+      }
     }
-    await auditService.record({
-      organizationId: auth.organizationId,
-      actorType: auth.actorType,
-      actorId: auth.sub,
-      action: 'AUTH_LOGOUT',
-      resourceType: 'User',
-      resourceId: auth.sub,
-    });
+    if (auth) {
+      await tokenService.revokeFamily(auth.tokenFamilyId);
+      await auditService.record({
+        organizationId: auth.organizationId,
+        actorType: auth.actorType,
+        actorId: auth.sub,
+        action: 'AUTH_LOGOUT',
+        resourceType: 'User',
+        resourceId: auth.sub,
+      });
+    }
     return { loggedOut: true };
   }
 

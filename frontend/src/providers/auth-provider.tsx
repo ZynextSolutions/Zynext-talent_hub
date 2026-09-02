@@ -230,7 +230,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (organization?.slug) params.set("organizationSlug", organization.slug);
     const loginQs = params.toString();
     try {
-      await api.post("/auth/logout", {});
+      // Cookie-only logout works when access JWT is already expired.
+      await api.post("/auth/logout", {}, { auth: false });
     } catch {
       // ignore
     } finally {

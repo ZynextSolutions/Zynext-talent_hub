@@ -1,3 +1,13 @@
+import {
+  publishAccessToken,
+  publishClearSession,
+  publishRefreshing,
+  releaseRefreshLock,
+  subscribeAuthSync,
+  tryAcquireRefreshLock,
+  waitForPeerAccessToken,
+} from "@/lib/auth-sync";
+
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '/api/v1';
 
 /** API origin for iframes/media — follows LAN hostname when env still points at localhost. */
@@ -41,6 +51,7 @@ export function resolveApiUrl(path: string): string {
 
 let accessToken: string | null = null;
 let refreshPromise: Promise<string | null> | null = null;
+let authSyncReady = false;
 
 /** Soft flag for Next middleware; refresh JWT stays httpOnly. Keep in sync with middleware.ts */
 export const AUTH_FLAG_COOKIE = "cor_logged_in";
@@ -64,14 +75,44 @@ function withCredentials(init: RequestInit = {}): RequestInit {
   return { ...init, credentials: "include" };
 }
 
-export function setTokens(access: string, _refresh?: string): void {
+function ensureAuthSync(): void {
+  if (!isBrowser() || authSyncReady) return;
+  authSyncReady = true;
+  subscribeAuthSync({
+    onAccess: (token) => {
+      applyAccessToken(token, { broadcast: false });
+    },
+    onClear: () => {
+      applyClearTokens({ broadcast: false });
+    },
+  });
+}
+
+function applyAccessToken(access: string, opts: { broadcast: boolean }): void {
   accessToken = access;
   setAuthFlagCookie(true);
+  if (opts.broadcast) publishAccessToken(access);
+}
+
+function applyClearTokens(opts: { broadcast: boolean }): void {
+  accessToken = null;
+  setAuthFlagCookie(false);
+  if (opts.broadcast) publishClearSession();
+}
+
+export function setTokens(access: string, _refresh?: string): void {
+  ensureAuthSync();
+  applyAccessToken(access, { broadcast: true });
 }
 
 export function clearTokens(): void {
-  accessToken = null;
-  setAuthFlagCookie(false);
+  ensureAuthSync();
+  applyClearTokens({ broadcast: true });
+}
+
+/** Local-only clear (e.g. transient network blip) — do not log out other tabs. */
+function clearTokensLocal(): void {
+  applyClearTokens({ broadcast: false });
 }
 
 export function getAccessToken(): string | null {
@@ -80,24 +121,55 @@ export function getAccessToken(): string | null {
 
 export function hydrateRefreshToken(): void {
   // Refresh lives in an httpOnly cookie; nothing to hydrate from storage.
+  ensureAuthSync();
 }
 
 /** Restore access token from refresh cookie before the first authenticated request. */
 export async function ensureAccessToken(): Promise<string | null> {
+  ensureAuthSync();
   if (accessToken) return accessToken;
   return refreshAccessToken();
 }
 
 async function refreshAccessToken(): Promise<string | null> {
+  ensureAuthSync();
+  if (accessToken) return accessToken;
   if (!refreshPromise) {
     refreshPromise = (async () => {
+      const owner =
+        typeof crypto !== "undefined" && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `tab-${Date.now()}-${Math.random()}`;
+      let holdsLock = false;
+
       try {
+        holdsLock = tryAcquireRefreshLock(owner);
+        if (!holdsLock) {
+          publishRefreshing();
+          const peer = await waitForPeerAccessToken(8_000);
+          if (peer) {
+            applyAccessToken(peer, { broadcast: false });
+            return peer;
+          }
+          holdsLock = tryAcquireRefreshLock(owner);
+          if (!holdsLock) {
+            const retryPeer = await waitForPeerAccessToken(2_000);
+            if (retryPeer) {
+              applyAccessToken(retryPeer, { broadcast: false });
+              return retryPeer;
+            }
+            // Last resort: refresh without lock (rare lock loss / private mode).
+          }
+        }
+
+        publishRefreshing();
         const res = await fetch(`${API_URL}/auth/refresh`, withCredentials({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({}),
         }));
         if (!res.ok) {
+          // Backend clears httpOnly cookies on terminal refresh auth failures.
           clearTokens();
           return null;
         }
@@ -110,19 +182,40 @@ async function refreshAccessToken(): Promise<string | null> {
           payload?.accessToken ?? payload?.tokens?.accessToken;
         if (!access) {
           clearTokens();
+          // Access missing despite 200 — clear remaining session cookies.
+          await killSessionCookies();
           return null;
         }
-        setTokens(access as string);
+        applyAccessToken(access as string, { broadcast: true });
         return access as string;
       } catch {
-        clearTokens();
+        // Network blip: drop soft flag/memory only; keep httpOnly cookie for retry.
+        // Do not broadcast — other tabs may still be healthy.
+        clearTokensLocal();
         return null;
       } finally {
+        if (holdsLock) releaseRefreshLock(owner);
         refreshPromise = null;
       }
     })();
   }
   return refreshPromise;
+}
+
+/** Best-effort cookie revoke/clear when access is already gone (no Bearer required). */
+async function killSessionCookies(): Promise<void> {
+  try {
+    await fetch(
+      `${API_URL}/auth/logout`,
+      withCredentials({
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      }),
+    );
+  } catch {
+    /* ignore */
+  }
 }
 
 export class ApiClientError extends Error {
@@ -272,7 +365,8 @@ export async function apiUploadForm<T>(
   formData.append(fieldName, file);
 
   const headers: Record<string, string> = {};
-  if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+  const existing = await ensureAccessToken();
+  if (existing) headers.Authorization = `Bearer ${existing}`;
 
   const url = path.startsWith('http') ? path : `${API_URL}${path}`;
   let response = await fetch(url, withCredentials({ method: 'POST', headers, body: formData }));

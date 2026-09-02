@@ -38,7 +38,7 @@ import {
   validateCoursePrerequisiteIds,
 } from '../lib/course-prerequisites';
 import { assertValidCompletionSettings } from '../lib/completion-rules';
-import { assertVideoLessonsHaveDuration } from '../lib/lesson-completion';
+import { assertQuizLessonsHaveAssessment, assertVideoLessonsHaveDuration } from '../lib/lesson-completion';
 
 class CourseService {
   async list(
@@ -163,6 +163,8 @@ class CourseService {
     assertValidCompletionSettings(course.completionMode, course.completionPercent);
     const videoDurationError = assertVideoLessonsHaveDuration(course.lessons ?? []);
     if (videoDurationError) throw AppError.from('VALIDATION_ERROR', videoDurationError);
+    const quizAssessmentError = assertQuizLessonsHaveAssessment(course.lessons ?? []);
+    if (quizAssessmentError) throw AppError.from('VALIDATION_ERROR', quizAssessmentError);
     const hasScormPackage = Boolean(course.scormPackageUrl?.startsWith('/uploads/scorm/'));
     if (course._count.lessons < 1 && !hasScormPackage) throw AppError.from('COURSE_NO_LESSONS');
 

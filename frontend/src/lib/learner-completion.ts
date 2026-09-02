@@ -2,6 +2,18 @@ import type { Lesson, LessonProgress } from "@/types";
 
 const VIDEO_WATCH_RATIO = 0.9;
 
+/** Mirrors backend `READING_DWELL_MS_PROD` — enforced when `isProd` is true. */
+export const READING_DWELL_MS_PROD = 10_000;
+
+export function readingDwellMs(isProd: boolean): number {
+  return isProd ? READING_DWELL_MS_PROD : 0;
+}
+
+/** Client mirror of backend prod detection for completion gates. */
+export function isCompletionProdEnv(): boolean {
+  return process.env.NODE_ENV === "production";
+}
+
 const EXTERNAL_VIDEO_HOSTS = new Set([
   "youtube.com",
   "m.youtube.com",
@@ -40,6 +52,7 @@ export function learnerCompletionCheck(
     | undefined,
   progress: Pick<LessonProgress, "watchedSeconds" | "openedAt" | "completed"> | undefined,
   nowMs: number = Date.now(),
+  isProd: boolean = isCompletionProdEnv(),
 ): LearnerCompletionCheck {
   if (!lesson) return { ok: false, reason: "No lesson selected." };
   if (progress?.completed) return { ok: true };
@@ -89,8 +102,23 @@ export function learnerCompletionCheck(
   }
 
   if (lesson.kind === "READING" || lesson.kind === "DOCUMENT" || lesson.kind === "DISCUSSION") {
-    if (!progress?.openedAt && !progress) {
+    if (!progress?.openedAt) {
       return { ok: false, reason: "Open the lesson before completing." };
+    }
+    const dwell = readingDwellMs(isProd);
+    if (dwell > 0) {
+      const openedMs = Date.parse(progress.openedAt);
+      if (!Number.isFinite(openedMs)) {
+        return { ok: false, reason: "Open the lesson before completing." };
+      }
+      const elapsed = nowMs - openedMs;
+      if (elapsed < dwell) {
+        const left = Math.ceil((dwell - elapsed) / 1000);
+        return {
+          ok: false,
+          reason: `Spend about ${left}s more on this lesson before completing.`,
+        };
+      }
     }
     return { ok: true };
   }
@@ -104,6 +132,7 @@ export function learnerCanMarkComplete(
     | undefined,
   progress: Pick<LessonProgress, "watchedSeconds" | "openedAt" | "completed"> | undefined,
   nowMs?: number,
+  isProd?: boolean,
 ): boolean {
-  return learnerCompletionCheck(lesson, progress, nowMs).ok;
+  return learnerCompletionCheck(lesson, progress, nowMs, isProd).ok;
 }

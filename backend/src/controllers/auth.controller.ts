@@ -10,7 +10,9 @@ import {
   clearAuthCookies,
   refreshTokenFromRequest,
   setAuthCookies,
+  shouldClearAuthCookiesOnRefreshError,
 } from '../lib/auth-cookies';
+import { tryResolveBearerAuth } from '../middleware/authenticate';
 
 type TokenBundle = { accessToken: string; refreshToken: string; expiresIn: number };
 
@@ -80,19 +82,34 @@ export const authController = {
   refresh: asyncHandler(async (req, res) => {
     const body = validated<{ refreshToken?: string }>(req);
     const token = refreshTokenFromRequest(req, body.refreshToken);
-    if (!token) throw AppError.from('AUTH_MISSING_TOKEN');
-    const data = await authService.refresh(token, {
-      userAgent: req.get('user-agent'),
-      ip: req.ip,
-    });
-    sendAuthOk(res, req.requestId, { ...data, tokens: data });
+    if (!token) {
+      clearAuthCookies(res);
+      throw AppError.from('AUTH_REFRESH_INVALID', 'Refresh token is missing.');
+    }
+    try {
+      const data = await authService.refresh(token, {
+        userAgent: req.get('user-agent'),
+        ip: req.ip,
+      });
+      sendAuthOk(res, req.requestId, { ...data, tokens: data });
+    } catch (err) {
+      if (shouldClearAuthCookiesOnRefreshError(err)) {
+        clearAuthCookies(res);
+      }
+      throw err;
+    }
   }),
 
   logout: asyncHandler(async (req, res) => {
-    if (!req.auth) throw AppError.from('AUTH_MISSING_TOKEN');
     const body = validated<{ refreshToken?: string }>(req);
     const token = refreshTokenFromRequest(req, body.refreshToken);
-    const data = await authService.logout(req.auth, token);
+    const auth = req.auth ?? (await tryResolveBearerAuth(req));
+    if (!auth && !token) {
+      clearAuthCookies(res);
+      sendOk(res, req.requestId, { loggedOut: true });
+      return;
+    }
+    const data = await authService.logout(auth ?? null, token);
     clearAuthCookies(res);
     sendOk(res, req.requestId, data);
   }),

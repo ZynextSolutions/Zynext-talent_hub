@@ -93,8 +93,49 @@ async function main() {
       body: JSON.stringify({}),
     });
     record('Refresh via httpOnly cookie', cookieRefresh.ok, cookieRefresh.ok ? undefined : `HTTP ${cookieRefresh.status}`);
+
+    const rotatedCookies = cookieRefresh.headers.getSetCookie?.() ?? [];
+    const rotatedRefresh = rotatedCookies.find((c) => c.startsWith('cor_refresh='))?.split(';')[0] ?? refreshCookie;
+
+    const cookieLogout = await fetch(`${API}/auth/logout`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Cookie: rotatedRefresh },
+      body: JSON.stringify({}),
+    });
+    const logoutClears = (cookieLogout.headers.getSetCookie?.() ?? []).some(
+      (c) => c.startsWith('cor_refresh=') && (c.includes('Max-Age=0') || c.includes('Expires=')),
+    );
+    record(
+      'Logout via refresh cookie without Bearer',
+      cookieLogout.ok && logoutClears,
+      cookieLogout.ok
+        ? logoutClears
+          ? undefined
+          : 'missing clear Set-Cookie for cor_refresh'
+        : `HTTP ${cookieLogout.status}`,
+    );
+
+    const staleAfterLogout = await fetch(`${API}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Cookie: rotatedRefresh },
+      body: JSON.stringify({}),
+    });
+    const staleClears = (staleAfterLogout.headers.getSetCookie?.() ?? []).some(
+      (c) => c.startsWith('cor_refresh=') && (c.includes('Max-Age=0') || c.includes('Expires=')),
+    );
+    record(
+      'Failed refresh clears auth cookies',
+      !staleAfterLogout.ok && staleClears,
+      staleAfterLogout.ok
+        ? 'refresh unexpectedly succeeded'
+        : staleClears
+          ? undefined
+          : `HTTP ${staleAfterLogout.status}; missing clear Set-Cookie`,
+    );
   } else {
     record('Refresh via httpOnly cookie', false, 'Set-Cookie cor_refresh missing');
+    record('Logout via refresh cookie without Bearer', false, 'skipped — no refresh cookie');
+    record('Failed refresh clears auth cookies', false, 'skipped — no refresh cookie');
   }
 
   if (!adminToken) {

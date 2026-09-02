@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
+  assertQuizLessonsHaveAssessment,
   assertVideoLessonsHaveDuration,
   isExternalVideoUrl,
   learnerMayCompleteLesson,
@@ -137,5 +138,23 @@ describe('assertVideoLessonsHaveDuration', () => {
       'Set a duration on every VIDEO lesson before publishing.',
     );
     assert.equal(assertVideoLessonsHaveDuration([{ kind: 'READING', durationSeconds: null }]), null);
+  });
+});
+
+describe('assertQuizLessonsHaveAssessment', () => {
+  it('rejects QUIZ lessons without a linked module quiz', () => {
+    assert.equal(
+      assertQuizLessonsHaveAssessment([{ kind: 'QUIZ' }]),
+      'Link a module quiz assessment to every QUIZ lesson before publishing.',
+    );
+    assert.equal(
+      assertQuizLessonsHaveAssessment([{ kind: 'QUIZ', moduleQuiz: { id: 'a1' } }]),
+      null,
+    );
+    assert.equal(
+      assertQuizLessonsHaveAssessment([{ kind: 'QUIZ', quizAssessmentId: 'a1' }]),
+      null,
+    );
+    assert.equal(assertQuizLessonsHaveAssessment([{ kind: 'READING' }]), null);
   });
 });

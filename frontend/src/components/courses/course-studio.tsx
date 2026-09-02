@@ -53,6 +53,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 import {
   majorToMinor,
   minorToMajor,
@@ -356,7 +357,28 @@ export function CourseStudio({ courseId }: CourseStudioProps) {
           {canEdit && course.status === "DRAFT" && (
             <Button
               size="sm"
-              onClick={() => publish.mutate(courseId)}
+              onClick={() => {
+                const missingQuiz = course.lessons.filter(
+                  (lesson) => lessonKind(lesson) === "QUIZ" && !lesson.quizAssessmentId,
+                );
+                if (missingQuiz.length) {
+                  toast.error(
+                    "Link a module quiz assessment to every QUIZ lesson before publishing.",
+                  );
+                  setTab("assessments");
+                  return;
+                }
+                const missingVideoDuration = course.lessons.filter(
+                  (lesson) =>
+                    lessonKind(lesson) === "VIDEO" &&
+                    (!lesson.durationSeconds || lesson.durationSeconds <= 0),
+                );
+                if (missingVideoDuration.length) {
+                  toast.error("Set a duration on every VIDEO lesson before publishing.");
+                  return;
+                }
+                publish.mutate(courseId);
+              }}
               disabled={publish.isPending || course.lessons.length < 1}
             >
               <Send />

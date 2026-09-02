@@ -89,17 +89,28 @@ export function LessonActivity({
         />
       ) : null}
 
-      {kind === "QUIZ" && lesson.resourceUrl && !lesson.quizAssessmentId && (
-        <a
-          href={resolveAssetUrl(lesson.resourceUrl)}
-          target="_blank"
-          rel="noreferrer"
-          className="text-indigo inline-flex items-center gap-2 text-sm"
-        >
-          <ExternalLink className="h-4 w-4" />
-          Open practice quiz
-        </a>
-      )}
+      {kind === "QUIZ" && !lesson.quizAssessmentId ? (
+        <Card className="border-amber-500/30 bg-amber-500/5">
+          <CardContent className="space-y-3 p-6">
+            <p className="font-medium">Quiz not configured</p>
+            <p className="text-muted-foreground text-sm">
+              This quiz lesson has no linked assessment, so it cannot be completed. Ask an admin to
+              open Course Studio → Assessments and add a Module quiz for this lesson.
+            </p>
+            {lesson.resourceUrl ? (
+              <a
+                href={resolveAssetUrl(lesson.resourceUrl)}
+                target="_blank"
+                rel="noreferrer"
+                className="text-indigo inline-flex items-center gap-2 text-sm font-medium"
+              >
+                <ExternalLink className="h-4 w-4" />
+                Open practice quiz file
+              </a>
+            ) : null}
+          </CardContent>
+        </Card>
+      ) : null}
 
       {(kind === "ILT" || kind === "VILT") && enrollmentId ? (
         <LessonSessionPanel courseId={courseId} lesson={lesson} lessonCompleted={lessonCompleted} />

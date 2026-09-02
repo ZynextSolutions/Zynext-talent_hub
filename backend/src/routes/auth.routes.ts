@@ -36,7 +36,7 @@ authRouter.get('/sso/:slug', validate({ params: ssoSlugParam }), authController.
 authRouter.post('/sso/exchange', authRateLimit, validate({ body: ssoExchangeBody }), authController.ssoExchange);
 authRouter.post('/mfa/login', authRateLimit, validate({ body: mfaLoginBody }), authController.mfaLogin);
 
-authRouter.post('/logout', authenticate, validate({ body: logoutBody }), authController.logout);
+authRouter.post('/logout', validate({ body: logoutBody }), authController.logout);
 authRouter.get('/me', authenticate, authController.me);
 authRouter.patch('/me', authenticate, validate({ body: patchMeBody }), authController.patchMe);
 authRouter.post(

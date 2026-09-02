@@ -102,6 +102,8 @@ class CertificateService {
       enrollment.course.title,
       created.certificateNumber,
     );
+    // Path unlock runs when enrollment becomes COMPLETED (progress/SCORM). Kept here as
+    // an idempotent fallback for cert-only completion edges and pre-fix enrollments.
     await learningPathService.onCourseCompleted(organizationId, enrollmentId, tx);
     return toCertificateDto(created);
   }

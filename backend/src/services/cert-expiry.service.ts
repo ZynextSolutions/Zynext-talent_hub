@@ -4,18 +4,11 @@ import { notificationService } from './notification.service';
 import { mailService } from './mail.service';
 import { clock } from '../lib/clock';
 import { startOfUtcDay, daysUntilDue } from '../lib/date';
-
-const THRESHOLDS = [
-  { days: 90, kind: 'cert_expiring_90', notificationKind: 'CERT_EXPIRING' as const },
-  { days: 30, kind: 'cert_expiring_30', notificationKind: 'CERT_EXPIRING' as const },
-  { days: 7, kind: 'cert_expiring_7', notificationKind: 'CERT_EXPIRING' as const },
-  { days: 0, kind: 'cert_expired', notificationKind: 'CERT_EXPIRED' as const },
-];
+import { selectCertExpiryThreshold } from '../lib/cert-expiry';
 
 class CertExpiryService {
   async run(organizationId: string) {
     const now = clock.now();
-    const today = startOfUtcDay(now);
     const certs = await prisma.certificate.findMany({
       where: {
         organizationId,
@@ -33,51 +26,49 @@ class CertExpiryService {
     for (const cert of certs) {
       if (!cert.expiresAt) continue;
       const daysLeft = daysUntilDue(cert.expiresAt, now);
-      for (const threshold of THRESHOLDS) {
-        if (threshold.days === 0) {
-          if (daysLeft >= 0) continue;
-        } else if (daysLeft !== threshold.days) {
-          continue;
-        }
+      const threshold = selectCertExpiryThreshold(daysLeft);
+      if (!threshold) continue;
 
-        const claimed = await reminderDeliveryRepository.tryClaim({
-          organizationId,
-          userId: cert.userId,
-          enrollmentId: cert.enrollmentId,
-          channel: 'email',
-          kind: threshold.kind,
-          sentOnDate: today,
-        });
-        if (!claimed) continue;
+      // Once per threshold kind per certificate (claim date anchored to expiresAt),
+      // so window matches survive missed cron days without daily spam.
+      const claimDate = startOfUtcDay(cert.expiresAt);
+      const claimed = await reminderDeliveryRepository.tryClaim({
+        organizationId,
+        userId: cert.userId,
+        enrollmentId: cert.enrollmentId,
+        channel: 'email',
+        kind: threshold.kind,
+        sentOnDate: claimDate,
+      });
+      if (!claimed) continue;
 
-        const expiryLabel = cert.expiresAt.toISOString().slice(0, 10);
-        const title =
-          threshold.days === 0
-            ? `Certificate expired: ${cert.course.title}`
-            : `Certificate expiring in ${threshold.days} day(s): ${cert.course.title}`;
-        const body =
-          threshold.days === 0
-            ? `Your certificate for ${cert.course.title} expired on ${expiryLabel}. Recertification may be required.`
-            : `Your certificate for ${cert.course.title} expires on ${expiryLabel}.`;
+      const expiryLabel = cert.expiresAt.toISOString().slice(0, 10);
+      const title =
+        threshold.notificationKind === 'CERT_EXPIRED'
+          ? `Certificate expired: ${cert.course.title}`
+          : `Certificate expiring in ${threshold.labelDays} day(s): ${cert.course.title}`;
+      const body =
+        threshold.notificationKind === 'CERT_EXPIRED'
+          ? `Your certificate for ${cert.course.title} expired on ${expiryLabel}. Recertification may be required.`
+          : `Your certificate for ${cert.course.title} expires on ${expiryLabel}.`;
 
-        await notificationService.create({
-          organizationId,
-          userId: cert.userId,
-          kind: threshold.notificationKind,
-          title,
-          body,
-          href: notificationService.courseHref(cert.courseId),
-          enrollmentId: cert.enrollmentId,
-          courseId: cert.courseId,
-        });
-        await mailService.sendCertExpiry({
-          to: cert.user.email,
-          courseTitle: cert.course.title,
-          expiryLabel,
-          daysLeft: threshold.days === 0 ? daysLeft : threshold.days,
-        });
-        sent += 1;
-      }
+      await notificationService.create({
+        organizationId,
+        userId: cert.userId,
+        kind: threshold.notificationKind,
+        title,
+        body,
+        href: notificationService.courseHref(cert.courseId),
+        enrollmentId: cert.enrollmentId,
+        courseId: cert.courseId,
+      });
+      await mailService.sendCertExpiry({
+        to: cert.user.email,
+        courseTitle: cert.course.title,
+        expiryLabel,
+        daysLeft: threshold.notificationKind === 'CERT_EXPIRED' ? daysLeft : threshold.labelDays,
+      });
+      sent += 1;
     }
     return { checked: certs.length, sent };
   }

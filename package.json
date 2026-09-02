@@ -18,7 +18,7 @@
     "test:smoke": "tsx scripts/smoke-test.ts",
     "test:identity": "tsx scripts/identity-test.ts",
     "test:course": "tsx scripts/course-test.ts",
-    "test:unit": "tsx --test backend/src/lib/completion.test.ts backend/src/lib/lesson-completion.test.ts backend/src/lib/assessment-questions.test.ts backend/src/lib/assessment-review.test.ts backend/src/lib/analytics-query.test.ts backend/src/lib/secret-box.test.ts backend/src/lib/ssrf.test.ts backend/src/lib/sso-redaction.test.ts backend/src/lib/scorm-package.test.ts backend/src/lib/scorm-access.test.ts backend/src/lib/scorm-ticket.test.ts backend/src/lib/media-access.test.ts backend/src/lib/job-secret.test.ts backend/src/domain/api-key-scopes.test.ts backend/src/lib/one-time-token.test.ts backend/src/lib/redact-request-path.test.ts",
+    "test:unit": "tsx --test backend/src/lib/completion.test.ts backend/src/lib/lesson-completion.test.ts backend/src/lib/assessment-questions.test.ts backend/src/lib/assessment-review.test.ts backend/src/lib/analytics-query.test.ts backend/src/lib/secret-box.test.ts backend/src/lib/ssrf.test.ts backend/src/lib/sso-redaction.test.ts backend/src/lib/scorm-package.test.ts backend/src/lib/scorm-access.test.ts backend/src/lib/scorm-ticket.test.ts backend/src/lib/media-access.test.ts backend/src/lib/job-secret.test.ts backend/src/lib/auth-cookies.test.ts backend/src/lib/cert-expiry.test.ts backend/src/domain/api-key-scopes.test.ts backend/src/lib/one-time-token.test.ts backend/src/lib/redact-request-path.test.ts frontend/src/lib/auth-sync.test.ts",
     "test:integration": "npm run test:smoke && npm run test:course && npm run test:identity",
     "test:ci": "npm run test:unit && npm run test:integration",
     "postinstall": "prisma generate"

@@ -78,7 +78,7 @@ The **jobs** function runs daily at `0 2 * * *` UTC and POSTs to the private API
 - `/api/v1/jobs/cert-expiry`
 - `/api/v1/jobs/analytics-snapshots`
 
-Each call includes `?organizationId=<ORGANIZATION_ID>` and `X-Job-Secret`. The shell logic mirrors `scripts/railway-cron.sh` for local testing:
+Each call includes `?organizationId=<ORGANIZATION_ID>` and `X-Job-Secret`. Jobs run independently — one failure does not skip later jobs; the cron exits non-zero if any job failed. The shell logic mirrors `scripts/railway-cron.sh` for local testing:
 
 ```bash
 export JOB_SECRET=... API_HOST=... API_PORT=4000 ORGANIZATION_ID=...

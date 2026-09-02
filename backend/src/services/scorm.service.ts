@@ -8,6 +8,7 @@ import { lessonRepository } from '../repositories/lesson.repository';
 import { progressRepository } from '../repositories/progress.repository';
 import { courseService } from './course.service';
 import { certificateService } from './certificate.service';
+import { learningPathService } from './learning-path.service';
 import { extractScormPackage } from '../lib/scorm-package';
 import { assertCourseAvailableNow } from '../lib/course-availability';
 import {
@@ -233,6 +234,7 @@ class ScormService {
           status: 'COMPLETED',
           completedAt: clock.now(),
         });
+        await learningPathService.onCourseCompleted(organizationId, enrollmentId, tx);
         certificate = await certificateService.issueIfEligible(organizationId, enrollmentId, tx);
       } else if (enrollment.status === 'ENROLLED') {
         await enrollmentRepository.withTx(tx).update(organizationId, enrollmentId, {

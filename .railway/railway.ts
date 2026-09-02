@@ -23,11 +23,26 @@ const JOB_PATHS = [
 ] as const;
 
 function cronStartCommand(): string {
-  const calls = JOB_PATHS.map(
-    (path) =>
-      `curl -fsS -X POST "$BASE/${path}?organizationId=$ORGANIZATION_ID" -H "X-Job-Secret: $JOB_SECRET"`,
-  ).join("; echo; ");
-  return `set -eu; BASE="http://$API_HOST:$API_PORT/api/v1/jobs"; ${calls}; echo "[cron] done"`;
+  // Run every job even if one fails; exit non-zero if any failed (for observability).
+  const list = JOB_PATHS.join(" ");
+  return [
+    "set -u",
+    'BASE="http://$API_HOST:$API_PORT/api/v1/jobs"',
+    "fail=0",
+    `for path in ${list}; do`,
+    '  echo "[cron] POST $path"',
+    '  if curl -fsS -X POST "$BASE/$path?organizationId=$ORGANIZATION_ID" -H "X-Job-Secret: $JOB_SECRET"; then',
+    "    echo",
+    '    echo "[cron] $path ok"',
+    "  else",
+    "    echo",
+    '    echo "[cron] $path FAILED" >&2',
+    "    fail=1",
+    "  fi",
+    "done",
+    'echo "[cron] done"',
+    "exit $fail",
+  ].join("\n");
 }
 
 export default defineRailway(() => {

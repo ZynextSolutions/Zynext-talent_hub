@@ -21,7 +21,7 @@ import { api } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useCourse } from "@/hooks/useCourses";
-import type { Enrollment, EnrollmentDetail, Paginated } from "@/types";
+import type { Enrollment, EnrollmentDetail, EnrollmentStatus, LessonProgress, Paginated } from "@/types";
 import { Button } from "@/components/ui/button";
 import { DueDateBadge, DueDateLine } from "@/components/learner/due-date-display";
 import { Progress } from "@/components/ui/progress";
@@ -42,10 +42,11 @@ import {
 } from "@/lib/completion";
 import { Badge } from "@/components/ui/badge";
 import {
+  isCompletionProdEnv,
   isExternalVideoUrl,
   learnerCompletionCheck,
+  readingDwellMs,
 } from "@/lib/learner-completion";
-import type { LessonProgress } from "@/types";
 
 export default function LearnCoursePage({ params }: { params: Promise<{ courseId: string }> }) {
   const { courseId } = use(params);
@@ -84,6 +85,7 @@ export default function LearnCoursePage({ params }: { params: Promise<{ courseId
   const [activeSurveyId, setActiveSurveyId] = useState<string | null>(null);
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [localProgress, setLocalProgress] = useState<Record<string, Partial<LessonProgress>>>({});
+  const [completingLesson, setCompletingLesson] = useState(false);
   const { data: assessments } = useCourseAssessments(courseId);
   const preAssessment = assessments?.find((a) => a.kind === "PRE");
   const surveys = assessments?.filter((a) => a.kind === "SURVEY") ?? [];
@@ -193,6 +195,27 @@ export default function LearnCoursePage({ params }: { params: Promise<{ courseId
           completed: true,
         },
       }));
+      // Apply enrollment progress immediately so final assessment unlocks without waiting on refetch.
+      queryClient.setQueryData<EnrollmentDetail>(["enrollments", enrollmentId], (old) => {
+        if (!old) return old;
+        const nextProgress = [...(old.progress ?? [])];
+        const idx = nextProgress.findIndex((row) => row.lessonId === lessonId);
+        const merged: LessonProgress = {
+          ...(idx >= 0
+            ? nextProgress[idx]
+            : { lessonId, completed: false, positionSeconds: 0 }),
+          ...data.lessonProgress,
+          completed: true,
+        };
+        if (idx >= 0) nextProgress[idx] = merged;
+        else nextProgress.push(merged);
+        return {
+          ...old,
+          progressPercent: data.enrollment.progressPercent,
+          status: data.enrollment.status as EnrollmentStatus,
+          progress: nextProgress,
+        };
+      });
       queryClient.invalidateQueries({ queryKey: ["enrollments"] });
       toast.success("Lesson completed");
     },
@@ -202,6 +225,8 @@ export default function LearnCoursePage({ params }: { params: Promise<{ courseId
   });
 
   const positionTimer = useRef<number | undefined>(undefined);
+  const pendingPositionRef = useRef<{ lessonId: string; seconds: number } | null>(null);
+  const flushInFlightRef = useRef<Promise<LessonProgress | null> | null>(null);
 
   function patchLocalProgress(lessonId: string, patch: Partial<LessonProgress>) {
     setLocalProgress((prev) => ({
@@ -210,17 +235,58 @@ export default function LearnCoursePage({ params }: { params: Promise<{ courseId
     }));
   }
 
+  async function putLessonPosition(
+    lessonId: string,
+    seconds: number,
+  ): Promise<LessonProgress | null> {
+    if (!enrollmentId) return null;
+    const data = await api.put<{ lessonProgress: LessonProgress }>(
+      `/enrollments/${enrollmentId}/progress/lessons/${lessonId}`,
+      { positionSeconds: seconds },
+    );
+    if (data?.lessonProgress) {
+      patchLocalProgress(lessonId, data.lessonProgress);
+      return data.lessonProgress;
+    }
+    return null;
+  }
+
+  async function flushLessonPosition(lessonId: string, seconds: number): Promise<LessonProgress | null> {
+    const pending = pendingPositionRef.current;
+    if (pending?.lessonId === lessonId && pending.seconds === seconds && flushInFlightRef.current) {
+      return flushInFlightRef.current;
+    }
+    const run = putLessonPosition(lessonId, seconds).finally(() => {
+      if (flushInFlightRef.current === run) flushInFlightRef.current = null;
+      const latest = pendingPositionRef.current;
+      if (latest?.lessonId === lessonId && latest.seconds === seconds) {
+        pendingPositionRef.current = null;
+      }
+    });
+    flushInFlightRef.current = run;
+    return run;
+  }
+
+  /** Cancel debounce and push the latest position so complete uses server watch time. */
+  async function flushPendingPosition(lessonId: string): Promise<LessonProgress | null> {
+    window.clearTimeout(positionTimer.current);
+    if (flushInFlightRef.current) {
+      await flushInFlightRef.current.catch(() => null);
+    }
+    const pending = pendingPositionRef.current;
+    const seconds =
+      pending?.lessonId === lessonId
+        ? pending.seconds
+        : (progressMap.get(lessonId)?.positionSeconds ?? 0);
+    return flushLessonPosition(lessonId, seconds);
+  }
+
   function recordLessonVisit(lessonId: string) {
     if (!enrollmentId) return;
     const seconds = progressMap.get(lessonId)?.positionSeconds ?? 0;
-    void api
-      .put<{ lessonProgress: LessonProgress }>(
-        `/enrollments/${enrollmentId}/progress/lessons/${lessonId}`,
-        { positionSeconds: seconds },
-      )
-      .then((data) => {
-        if (data?.lessonProgress) patchLocalProgress(lessonId, data.lessonProgress);
-      });
+    void putLessonPosition(lessonId, seconds).catch(() => {
+      /* visit tracking is best-effort */
+    });
   }
 
   function selectLesson(lessonId: string) {
@@ -241,20 +307,14 @@ export default function LearnCoursePage({ params }: { params: Promise<{ courseId
 
   function savePosition(lessonId: string, seconds: number) {
     if (!enrollmentId) return;
-    patchLocalProgress(lessonId, {
-      positionSeconds: seconds,
-      watchedSeconds: Math.max(progressMap.get(lessonId)?.watchedSeconds ?? 0, seconds),
-    });
+    // Only position is optimistic; watchedSeconds comes from the server (capped deltas).
+    patchLocalProgress(lessonId, { positionSeconds: seconds });
+    pendingPositionRef.current = { lessonId, seconds };
     window.clearTimeout(positionTimer.current);
     positionTimer.current = window.setTimeout(() => {
-      void api
-        .put<{ lessonProgress: LessonProgress }>(
-          `/enrollments/${enrollmentId}/progress/lessons/${lessonId}`,
-          { positionSeconds: seconds },
-        )
-        .then((data) => {
-          if (data?.lessonProgress) patchLocalProgress(lessonId, data.lessonProgress);
-        });
+      void flushLessonPosition(lessonId, seconds).catch(() => {
+        /* position saves are best-effort until complete flush */
+      });
     }, 1500);
   }
 
@@ -275,14 +335,61 @@ export default function LearnCoursePage({ params }: { params: Promise<{ courseId
   );
   const canCompleteActive = completionCheck.ok;
 
+  async function handleCompleteOrNext() {
+    if (enrollmentId && activeLesson && !scormManaged && !iltManaged && !quizManaged) {
+      setCompletingLesson(true);
+      try {
+        const flushed = await flushPendingPosition(activeLesson.id);
+        const progressForCheck = flushed ?? progressMap.get(activeLesson.id);
+        const check = learnerCompletionCheck(
+          {
+            ...activeLesson,
+            kind: activeKind ?? activeLesson.kind,
+            videoUrl: effectiveVideoUrl,
+          },
+          progressForCheck,
+          Date.now(),
+        );
+        if (!check.ok) {
+          setNowMs(Date.now());
+          toast.error(check.reason || "This lesson is not ready to mark complete.");
+          return;
+        }
+        await completeLesson.mutateAsync(activeLesson.id);
+        if (activeIndex < lessons.length - 1) {
+          selectLesson(lessons[activeIndex + 1].id);
+        } else if (hasFinalAssessment) {
+          setViewMode("quiz");
+        }
+      } catch {
+        /* mutateAsync errors already toasted in onError */
+      } finally {
+        setCompletingLesson(false);
+      }
+      return;
+    }
+    if (activeIndex < lessons.length - 1) {
+      const nextId = lessons[activeIndex + 1]?.id;
+      if (nextId) selectLesson(nextId);
+    } else if (hasFinalAssessment) {
+      setViewMode("quiz");
+    }
+  }
+
   useEffect(() => {
-    if (
-      !activeLesson ||
-      activeKind !== "VIDEO" ||
-      !isExternalVideoUrl(effectiveVideoUrl) ||
-      completionCheck.ok ||
-      activeProgress?.completed
-    ) {
+    const readingKind =
+      activeKind === "READING" || activeKind === "DOCUMENT" || activeKind === "DISCUSSION";
+    const needsExternalVideoTick =
+      activeKind === "VIDEO" &&
+      isExternalVideoUrl(effectiveVideoUrl) &&
+      !completionCheck.ok &&
+      !activeProgress?.completed;
+    const needsReadingDwellTick =
+      readingKind &&
+      readingDwellMs(isCompletionProdEnv()) > 0 &&
+      !completionCheck.ok &&
+      !activeProgress?.completed;
+    if (!activeLesson || (!needsExternalVideoTick && !needsReadingDwellTick)) {
       return;
     }
     const timer = window.setInterval(() => setNowMs(Date.now()), 1000);
@@ -531,26 +638,11 @@ export default function LearnCoursePage({ params }: { params: Promise<{ courseId
 
                   <Button
                     onClick={() => {
-                      if (enrollmentId && activeLesson && !scormManaged && !iltManaged && !quizManaged) {
-                        completeLesson.mutate(activeLesson.id, {
-                          onSuccess: () => {
-                            if (activeIndex < lessons.length - 1) {
-                              selectLesson(lessons[activeIndex + 1].id);
-                            } else if (hasFinalAssessment) {
-                              setViewMode("quiz");
-                            }
-                          },
-                        });
-                        return;
-                      }
-                      if (activeIndex < lessons.length - 1) {
-                        selectLesson(lessons[activeIndex + 1].id);
-                      } else if (hasFinalAssessment) {
-                        setViewMode("quiz");
-                      }
+                      void handleCompleteOrNext();
                     }}
                     disabled={
                       completeLesson.isPending ||
+                      completingLesson ||
                       Boolean(
                         enrollmentId &&
                           !scormManaged &&
@@ -595,6 +687,12 @@ export default function LearnCoursePage({ params }: { params: Promise<{ courseId
                 completionCheck.reason ? (
                   <p className="text-muted-foreground text-center text-xs sm:text-right">
                     {completionCheck.reason}
+                  </p>
+                ) : null}
+                {enrollmentId && quizManaged && activeLesson && !activeLesson.quizAssessmentId ? (
+                  <p className="text-muted-foreground text-center text-xs sm:text-right">
+                    Quiz not configured — this lesson cannot be completed until an admin links an
+                    assessment.
                   </p>
                 ) : null}
               </div>

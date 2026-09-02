@@ -7,6 +7,7 @@ import { progressRepository } from '../repositories/progress.repository';
 import { courseRepository } from '../repositories/course.repository';
 import { toEnrollmentDto, toProgressDto } from '../lib/mappers';
 import { certificateService } from './certificate.service';
+import { learningPathService } from './learning-path.service';
 import { skillService } from './skill.service';
 import { xapiService } from './xapi.service';
 import { integrationsService } from './integrations.service';
@@ -224,6 +225,7 @@ class ProgressService {
 
     let certificate = null;
     if (completedNow) {
+      await learningPathService.onCourseCompleted(organizationId, enrollmentId, tx);
       certificate = await certificateService.issueIfEligible(organizationId, enrollmentId, tx);
       void skillService.onCourseCompleted(organizationId, enrollment.userId, enrollment.courseId);
       void xapiService.record({

@@ -128,3 +128,18 @@ export function assertVideoLessonsHaveDuration(
   if (!missing.length) return null;
   return 'Set a duration on every VIDEO lesson before publishing.';
 }
+
+export function assertQuizLessonsHaveAssessment(
+  lessons: Array<{
+    kind: LessonKind;
+    moduleQuiz?: { id: string } | null;
+    quizAssessmentId?: string | null;
+  }>,
+): string | null {
+  const missing = lessons.filter((lesson) => {
+    if (lesson.kind !== 'QUIZ') return false;
+    return !(lesson.quizAssessmentId || lesson.moduleQuiz?.id);
+  });
+  if (!missing.length) return null;
+  return 'Link a module quiz assessment to every QUIZ lesson before publishing.';
+}

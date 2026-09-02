@@ -1,10 +1,24 @@
 import type { CookieOptions, Request, Response } from 'express';
 import { env } from '../config/env';
+import { AppError } from '../errors/app-error';
 import { parseCookieHeader } from './cookies';
 
 export const REFRESH_COOKIE = 'cor_refresh';
 export const AUTH_FLAG_COOKIE = 'cor_logged_in';
 export const MEDIA_COOKIE = 'media_session';
+
+/** Terminal refresh failures — clear httpOnly cookies so the client cannot keep a dead session. */
+const REFRESH_COOKIE_CLEAR_CODES = new Set([
+  'AUTH_MISSING_TOKEN',
+  'AUTH_REFRESH_INVALID',
+  'AUTH_REFRESH_EXPIRED',
+  'AUTH_REFRESH_REUSE',
+  'AUTH_ACCOUNT_SUSPENDED',
+  'AUTH_ORG_SUSPENDED',
+  'AUTH_PRINCIPAL_INVALID',
+  'AUTH_TOKEN_INVALID',
+  'AUTH_TOKEN_EXPIRED',
+]);
 
 function baseCookie(path: string, httpOnly: boolean, maxAgeMs: number): CookieOptions {
   return {
@@ -13,6 +27,14 @@ function baseCookie(path: string, httpOnly: boolean, maxAgeMs: number): CookieOp
     sameSite: 'lax',
     path,
     maxAge: maxAgeMs,
+  };
+}
+
+function clearCookieOptions(path: string): CookieOptions {
+  return {
+    path,
+    secure: env.isProd,
+    sameSite: 'lax',
   };
 }
 
@@ -28,9 +50,14 @@ export function setAuthCookies(
 }
 
 export function clearAuthCookies(res: Response): void {
-  res.clearCookie(REFRESH_COOKIE, { path: '/api/v1/auth' });
-  res.clearCookie(AUTH_FLAG_COOKIE, { path: '/' });
-  res.clearCookie(MEDIA_COOKIE, { path: '/api/v1/media' });
+  res.clearCookie(REFRESH_COOKIE, clearCookieOptions('/api/v1/auth'));
+  res.clearCookie(AUTH_FLAG_COOKIE, clearCookieOptions('/'));
+  res.clearCookie(MEDIA_COOKIE, clearCookieOptions('/api/v1/media'));
+}
+
+export function shouldClearAuthCookiesOnRefreshError(err: unknown): boolean {
+  if (!(err instanceof AppError)) return false;
+  return REFRESH_COOKIE_CLEAR_CODES.has(String(err.code));
 }
 
 export function refreshTokenFromRequest(req: Request, bodyToken?: string): string | undefined {

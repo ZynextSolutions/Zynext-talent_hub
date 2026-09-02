@@ -249,6 +249,13 @@ export function StudioLessonEditor({ lesson, courseId, courseLessons, canWrite }
             onClear={() => setResourceUrl("")}
           />
         )}
+        {kind === "QUIZ" && (
+          <p className="text-muted-foreground rounded-md border border-border bg-muted/40 px-3 py-2 text-xs">
+            {lesson.quizAssessmentId
+              ? "Module quiz assessment is linked. Learners complete this lesson by passing that quiz."
+              : "Required before publish: open the Assessments tab and create a Module quiz linked to this lesson."}
+          </p>
+        )}
         <div className="space-y-2">
           <Label htmlFor="studioDuration">Estimated time (minutes)</Label>
           <Input
